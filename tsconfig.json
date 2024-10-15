@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "target": "es2018",                          
+    "module": "esnext",
+    "moduleResolution": "node",                     
+    "noEmitOnError": true,
+    "lib": ["es2017", "dom"],       
+    "jsx": "react",                     
+    "strict": true,  
+    "esModuleInterop": false,                 
+    "outDir": "out-tsc",
+    "rootDir": "./",
+    "paths": {
+      "src/*": ["*"]
+    }
+  },
+  "include": ["./src/**/*.ts"],
+}

@@ -1,0 +1,57 @@
+{
+  "name": "react-emd-components",
+  "type": "module",
+  "types": "index.d.ts",
+  "version": "1.0.0",
+  "description": "Use the EMD Cloud components with one package",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest --watch=false",
+    "test:watch": "vitest --watch",
+    "build": "rimraf dist && tsc && rollup -c rollup.config.js",
+    "prettier:formating": "npx prettier --write ./src"
+  },
+  "keywords": [
+    "EMD",
+    "Cloud",
+    "React",
+    "Integration"
+  ],
+  "author": "Okulus Monteko",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tus-js-client": "^4.2.3",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@eslint/js": "^9.12.0",
+    "@open-wc/building-rollup": "^3.0.2",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.11",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "add": "^2.0.6",
+    "eslint": "^9.12.0",
+    "eslint-plugin-react": "^7.37.1",
+    "globals": "^15.11.0",
+    "happy-dom": "^15.7.4",
+    "prettier": "3.3.3",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.24.0",
+    "rollup-plugin-dts": "^6.1.1",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.9.0",
+    "vitest": "^2.1.3",
+    "yarn": "^1.22.22"
+  }
+}
