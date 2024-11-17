@@ -2,7 +2,7 @@
   "name": "react-emd-components",
   "type": "module",
   "types": "index.d.ts",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Use the EMD Cloud components with one package",
   "main": "src/index.ts",
   "scripts": {
@@ -18,12 +18,40 @@
     "Integration"
   ],
   "author": "Okulus Monteko",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EMD-Cloud/react-components.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EMD-Cloud/react-components/issues"
+  },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tus-js-client": "^4.2.3",
     "uuid": "^10.0.0"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "repositoryUrl": "https://github.com/EMD-Cloud/react-components.git",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/git",
+        {
+          "message": "chore(release): ${nextRelease.version} \n\n${nextRelease.notes}"
+        }
+      ],
+      "@semantic-release/github"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
