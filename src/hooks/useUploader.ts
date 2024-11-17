@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 // ** Source code Imports
 import ApplicationContext from '../components/ApplicationProvider/context'
 
-type UploaderOptions = {
+export type UploaderOptions = {
   apiUrl: string
   app: string
 }
@@ -23,7 +23,7 @@ export type FileType = {
   bytesUploaded?: number
   bytesTotal?: number
   methods?: {
-    stop?: () => void
+    stop: () => void
   }
 }
 
@@ -38,7 +38,7 @@ interface UploaderType {
 
 const useUploader = ({
   options,
-  integration,
+  integration = 'default',
   headers,
   retryDelays = [0, 3000, 5000, 10000, 20000],
   onBeforeUpload = () => true,
