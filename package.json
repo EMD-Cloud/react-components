@@ -54,6 +54,11 @@
     "access": "public"
   },
   "devDependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.1",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.1",
     "@babel/core": "^7.25.2",
     "@eslint/js": "^9.12.0",
     "@open-wc/building-rollup": "^3.0.2",
