@@ -14,10 +14,8 @@
     "build-storybook": "storybook build"
   },
   "keywords": [
-    "EMD",
-    "Cloud",
-    "React",
-    "Integration"
+    "react",
+    "react-component"
   ],
   "author": "Okulus Monteko",
   "license": "MIT",
