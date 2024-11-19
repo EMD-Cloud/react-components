@@ -30,6 +30,7 @@ const ApplicationProvider = ({
     apiUrl,
     app,
     tokenType,
+    user: null
   })
 
   return (

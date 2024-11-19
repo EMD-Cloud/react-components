@@ -1,5 +1,5 @@
 // ** React Importsi
-import { useRef, useState, useEffect, useCallback, useContext } from 'react'
+import { useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react'
 
 // ** Modules Imports
 import { Upload } from 'tus-js-client'
@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 // ** Source code Imports
 import ApplicationContext from '../components/ApplicationProvider/context'
 
-type UploaderOptions = {
+export type UploaderOptions = {
   apiUrl: string
   app: string
 }
@@ -23,7 +23,7 @@ export type FileType = {
   bytesUploaded?: number
   bytesTotal?: number
   methods?: {
-    stop?: () => void
+    stop: () => void
   }
 }
 
@@ -50,19 +50,21 @@ const useUploader = ({
 
   const appData = useContext(ApplicationContext)
 
+  const integrationId = useMemo(() => integration || 'default', [integration])
+
   const getEndpointUrl = useCallback(() => {
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integration}/s3/`
-  }, [options, integration, appData])
+    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`
+  }, [options, integrationId, appData])
 
   const getFileUrl = useCallback(() => {
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integration}/file/`
-  }, [options, integration, appData])
+    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/`
+  }, [options, integrationId, appData])
 
   useEffect(() => {
     const filesInProgress = !!observedfiles.find(
@@ -81,7 +83,7 @@ const useUploader = ({
           endpoint: getEndpointUrl(),
           retryDelays,
           headers: {
-            ...(appData?.token && { Authorization: `token ${appData.token}` }),
+            ...(appData.user?.token && { Authorization: `token ${appData.user.token}` }),
             ...headers,
           },
           metadata: {
