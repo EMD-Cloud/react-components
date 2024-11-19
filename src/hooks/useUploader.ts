@@ -1,5 +1,5 @@
 // ** React Importsi
-import { useRef, useState, useEffect, useCallback, useContext } from 'react'
+import { useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react'
 
 // ** Modules Imports
 import { Upload } from 'tus-js-client'
@@ -38,7 +38,7 @@ interface UploaderType {
 
 const useUploader = ({
   options,
-  integration = 'default',
+  integration,
   headers,
   retryDelays = [0, 3000, 5000, 10000, 20000],
   onBeforeUpload = () => true,
@@ -50,19 +50,21 @@ const useUploader = ({
 
   const appData = useContext(ApplicationContext)
 
+  const integrationId = useMemo(() => integration || 'default', [integration])
+
   const getEndpointUrl = useCallback(() => {
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integration}/s3/`
-  }, [options, integration, appData])
+    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`
+  }, [options, integrationId, appData])
 
   const getFileUrl = useCallback(() => {
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integration}/file/`
-  }, [options, integration, appData])
+    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/`
+  }, [options, integrationId, appData])
 
   useEffect(() => {
     const filesInProgress = !!observedfiles.find(
@@ -81,7 +83,7 @@ const useUploader = ({
           endpoint: getEndpointUrl(),
           retryDelays,
           headers: {
-            ...(appData?.token && { Authorization: `token ${appData.token}` }),
+            ...(appData.user?.token && { Authorization: `token ${appData.user.token}` }),
             ...headers,
           },
           metadata: {

@@ -8,6 +8,7 @@ const ApplicationContext = createContext<ApplicationDataType>({
   apiUrl: '',
   app: '',
   tokenType: '',
+  user: null
 })
 
 export default ApplicationContext

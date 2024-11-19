@@ -4,5 +4,6 @@ const ApplicationContext = createContext({
     apiUrl: '',
     app: '',
     tokenType: '',
+    user: null
 });
 export default ApplicationContext;

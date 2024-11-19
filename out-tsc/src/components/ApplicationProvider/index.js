@@ -8,6 +8,7 @@ const ApplicationProvider = ({ apiUrl = 'api.emd.one', app, tokenType = 'token',
         apiUrl,
         app,
         tokenType,
+        user: null
     });
     return (React.createElement(ApplicationContext.Provider, { value: value }, children));
 };

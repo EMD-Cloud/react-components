@@ -1,5 +1,5 @@
 // ** React Importsi
-import { useRef, useState, useEffect, useCallback, useContext } from 'react';
+import { useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react';
 // ** Modules Imports
 import { Upload } from 'tus-js-client';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,16 +10,17 @@ const useUploader = ({ options, integration, headers, retryDelays = [0, 3000, 50
     const [isProccess, setProccess] = useState(false);
     const [observedfiles, setObservedFiles] = useState([]);
     const appData = useContext(ApplicationContext);
+    const integrationId = useMemo(() => integration || 'default', [integration]);
     const getEndpointUrl = useCallback(() => {
         const apiUrl = (options === null || options === void 0 ? void 0 : options.apiUrl) || (appData === null || appData === void 0 ? void 0 : appData.apiUrl);
         const app = (options === null || options === void 0 ? void 0 : options.app) || (appData === null || appData === void 0 ? void 0 : appData.app);
-        return `https://${apiUrl}/api/${app}/uploader/chunk/${integration}/s3/`;
-    }, [options, integration, appData]);
+        return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`;
+    }, [options, integrationId, appData]);
     const getFileUrl = useCallback(() => {
         const apiUrl = (options === null || options === void 0 ? void 0 : options.apiUrl) || (appData === null || appData === void 0 ? void 0 : appData.apiUrl);
         const app = (options === null || options === void 0 ? void 0 : options.app) || (appData === null || appData === void 0 ? void 0 : appData.app);
-        return `https://${apiUrl}/api/${app}/uploader/chunk/${integration}/file/`;
-    }, [options, integration, appData]);
+        return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/`;
+    }, [options, integrationId, appData]);
     useEffect(() => {
         const filesInProgress = !!observedfiles.find(({ status }) => status === 'progress');
         setProccess(filesInProgress);
@@ -30,11 +31,12 @@ const useUploader = ({ options, integration, headers, retryDelays = [0, 3000, 50
     }, [observedfiles]);
     const uploadFiles = useCallback((files) => {
         const uploadFile = (file, fileId) => {
+            var _a;
             const upload = new Upload(file, {
                 endpoint: getEndpointUrl(),
                 retryDelays,
                 headers: {
-                    ...((appData === null || appData === void 0 ? void 0 : appData.token) && { Authorization: `token ${appData.token}` }),
+                    ...(((_a = appData.user) === null || _a === void 0 ? void 0 : _a.token) && { Authorization: `token ${appData.user.token}` }),
                     ...headers,
                 },
                 metadata: {

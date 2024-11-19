@@ -70,13 +70,13 @@ const Uploader = ({
     <div>
       <div style={{ cursor: 'pointer' }} {...rootProps}>
         {dragStatus.isDraggingOver ? (
-          <div>Добавить</div>
+          <div>Add file</div>
         ) : (
           <div>
             { 
               isUploading
-                ? 'Загрузка...'
-                : 'Выберите файл'
+                ? 'Uploading...'
+                : 'Select files'
             }
           </div>
         )}
@@ -86,7 +86,7 @@ const Uploader = ({
         {value?.map(({ fileName, fileUrl }, index) => (
           <li key={`uploaded-${index}`}>
             <a href={fileUrl}>{fileName}</a>
-            <div onClick={() => onDelete(index)}>Удалить</div>
+            <div onClick={() => onDelete(index)}>Delete</div>
           </li>
         ))}
         {uploadingFiles?.map(({
@@ -99,19 +99,19 @@ const Uploader = ({
           <li key={id}>
             <span>{fileName}</span>
             {status === 'started' && (
-               <div>Загрузка</div>
+              <div>Uploading</div>
             )}
             {status === 'progress' && (
               <div>{progress}%</div>
             )}
             {status === 'failed' && (
-              <div>Ошибка</div>
+              <div>Failed</div>
             )}
             {status === 'success' && (
-              <div>Загружено</div>
+              <div>Success</div>
             )}
             {(status === 'started' || status === 'progress') && (
-              <div onClick={() => methods?.stop()}>Отмена</div>
+              <div onClick={() => methods?.stop()}>Cancel</div>
             )}
           </li>
         ))}
