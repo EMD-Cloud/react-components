@@ -12,7 +12,7 @@ import {
 import { acceptPropAsAcceptAttr } from '../tools/uploader'
 
 interface DropzoneType {
-  accept: Record<string, string[]>
+  accept?: Record<string, string[]>
   onDragOver?: (event: DragEvent<HTMLInputElement>) => void
   onDragLeave?: (event: DragEvent<HTMLInputElement>) => void
   onDrop?: (event: DragEvent<HTMLInputElement>) => void
@@ -22,7 +22,7 @@ interface DropzoneType {
 }
 
 const useDropzone = ({
-  accept,
+  accept = { '*': [] },
   onDragOver = () => {
     /* Empty... */
   },
