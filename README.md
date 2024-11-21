@@ -48,7 +48,7 @@ This hook manages file uploads to the server using the  `tus-js-client`  library
     -   `apiUrl`  (string): API URL for file uploads.
     -   `app`  (string): application name.
 -   `integration`  (string, optional): integration identifier for uploads.
--   `headers`  (Record<string, string | number | boolean>, optional): headers to be sent with the request.
+-   `headers`  (object, optional): headers to be sent with the request.
 -   `retryDelays`  (array, optional): an array of delays for retry attempts in milliseconds. Default is  `[0, 3000, 5000, 10000, 20000]`.
 -   `onBeforeUpload`  (function): callback function called before the upload starts. It should return  `true`  if the upload should continue, or  `false`  if the upload should be canceled. Defaults to  `true`.
 -   `onUpdate`  (function): callback function called when the status of file uploads is updated. Takes an array of files with updated upload status information.
