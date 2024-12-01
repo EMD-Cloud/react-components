@@ -4,6 +4,7 @@ import { useUploader, useDropzone } from '..'
 
 interface IProps {
   options: UploaderOptions
+  chunkSize?: number
   headers: Record<string, string | number | boolean>
   disabled?: boolean
   maxNumberOfFiles?: number
@@ -12,6 +13,7 @@ interface IProps {
 
 const Uploader = ({
   options,
+  chunkSize,
   headers,
   disabled = false,
   maxNumberOfFiles = 0,
@@ -21,7 +23,7 @@ const Uploader = ({
   const [uploadingFiles, setUploadingFiles] = React.useState<FileType[]>([])
   const [isUploading, setUploading] = React.useState(false)
 
-  const onUpdate = (data: FileType[]) => setValue(data)
+  const onUpdate = (data: FileType[]) => setValue((state) => [...state, ...data])
   const onDelete = (index: number) => setValue((state) => state.filter((_, i) => i !== index))
 
   const disabledUploadingConditions = 
@@ -31,6 +33,7 @@ const Uploader = ({
 
   const { uploadFiles } = useUploader({
     options,
+    chunkSize,
     headers,
     onBeforeUpload: (files) => {
       const allFilesLength = value.length + files.length

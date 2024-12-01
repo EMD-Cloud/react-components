@@ -10,12 +10,13 @@ const Template = (args) => <Uploader {...args} />
 
 export const Default = Template.bind({})
 Default.args = {
+  chunkSize: 64 * 1024 * 1024,
   options: {
-    apiUrl: '<domain>',
-    app: '<appId>'
+    apiUrl: process.env.TEST_PLATFORM_API_URL || '<domain>',
+    app: process.env.TEST_PLATFORM_APP_ID || '<appId>'
   },
   headers: {
-    Authorization: 'token <token>'
+    Authorization: `token ${process.env.TEST_PLATFORM_API_TOKEN || '<token>'}`
   },
   disabled: false,
   maxNumberOfFiles: 0,

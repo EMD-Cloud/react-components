@@ -29,6 +29,7 @@ export type FileType = {
 
 interface UploaderType {
   options?: UploaderOptions
+  chunkSize?: number
   integration?: string
   headers?: Record<string, string | number | boolean>
   retryDelays?: number[]
@@ -38,6 +39,7 @@ interface UploaderType {
 
 const useUploader = ({
   options,
+  chunkSize,
   integration,
   headers,
   retryDelays = [0, 3000, 5000, 10000, 20000],
@@ -59,11 +61,11 @@ const useUploader = ({
     return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`
   }, [options, integrationId, appData])
 
-  const getFileUrl = useCallback(() => {
+  const getFileUrl = useCallback((fileId: string) => {
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/`
+    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/${fileId}`
   }, [options, integrationId, appData])
 
   useEffect(() => {
@@ -81,6 +83,7 @@ const useUploader = ({
       const uploadFile = (file: File, fileId: string) => {
         const upload = new Upload(file, {
           endpoint: getEndpointUrl(),
+          chunkSize,
           retryDelays,
           headers: {
             ...(appData.user?.token && { Authorization: `token ${appData.user.token}` }),
@@ -122,16 +125,19 @@ const useUploader = ({
               })
             })
           },
-          onSuccess: () => {
+          onSuccess: (payload) => {
+            console.log(upload.url)
+            const xFileDownloadId = payload.lastResponse.getHeader('x-file-download-id')
+
             setObservedFiles((state: FileType[]) => {
               return state.map((item) => {
-                const fileUrl = `${getFileUrl()}/${upload.url?.split('/').pop()}`
+                const fileUrl = xFileDownloadId ? getFileUrl(xFileDownloadId) : undefined
 
                 if (item.id === fileId) {
                   return {
                     ...item,
                     name: item.name,
-                    status: 'success',
+                    status: xFileDownloadId ? 'success' : 'failed',
                     fileName: file.name,
                     fileUrl,
                   }
