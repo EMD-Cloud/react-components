@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { FileType, UploaderOptions } from '../hooks/useUploader'
+import { FileType, UploaderOptions, UploaderType } from '../hooks/useUploader'
 import { useUploader, useDropzone } from '..'
 
 interface IProps {
@@ -9,12 +9,14 @@ interface IProps {
   disabled?: boolean
   maxNumberOfFiles?: number
   accept?: Record<string, string[]>
+  readPermission?: UploaderType['readPermission']
 }
 
 const Uploader = ({
   options,
   chunkSize,
   headers,
+  readPermission,
   disabled = false,
   maxNumberOfFiles = 0,
   accept = { "*": [] }
@@ -35,6 +37,7 @@ const Uploader = ({
     options,
     chunkSize,
     headers,
+    readPermission,
     onBeforeUpload: (files) => {
       const allFilesLength = value.length + files.length
 

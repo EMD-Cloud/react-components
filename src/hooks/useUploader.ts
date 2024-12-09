@@ -27,11 +27,18 @@ export type FileType = {
   }
 }
 
-interface UploaderType {
+enum ReadPermissionsType {
+  Public = 'public',
+  OnlyAuthUser = 'onlyAuthUser',
+  OnlyAppStaff = 'onlyAppStaff'
+}
+
+export interface UploaderType {
   options?: UploaderOptions
   chunkSize?: number
   integration?: string
   headers?: Record<string, string | number | boolean>
+  readPermission?: ReadPermissionsType
   retryDelays?: number[]
   onBeforeUpload?: (files: File[]) => boolean
   onUpdate: (files: FileType[]) => void
@@ -42,6 +49,7 @@ const useUploader = ({
   chunkSize,
   integration,
   headers,
+  readPermission = ReadPermissionsType.OnlyAppStaff,
   retryDelays = [0, 3000, 5000, 10000, 20000],
   onBeforeUpload = () => true,
   onUpdate,
@@ -88,6 +96,7 @@ const useUploader = ({
           headers: {
             ...(appData.user?.token && { Authorization: `token ${appData.user.token}` }),
             ...headers,
+            readPermission
           },
           metadata: {
             filename: file.name,
