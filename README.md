@@ -49,6 +49,7 @@ This hook manages file uploads to the server using the  `tus-js-client`  library
     -   `app`  (string): application name.
 -   `integration`  (string, optional): integration identifier for uploads.
 -   `headers`  (object, optional): headers to be sent with the request.
+-   `readPermission` (string): option for setting read permission to file link (can be `public` for all users, `onlyAuthUser` for all authenticated users, `onlyAppStaff` for user who uploaded file and administrators)
 -   `retryDelays`  (array, optional): an array of delays for retry attempts in milliseconds. Default is  `[0, 3000, 5000, 10000, 20000]`.
 -   `onBeforeUpload`  (function): callback function called before the upload starts. It should return  `true`  if the upload should continue, or  `false`  if the upload should be canceled. Defaults to  `true`.
 -   `onUpdate`  (function): callback function called when the status of file uploads is updated. Takes an array of files with updated upload status information.

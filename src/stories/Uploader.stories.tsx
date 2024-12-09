@@ -3,7 +3,7 @@ import Uploader from './Uploader'
 
 export default {
   title: 'Example/Uploader',
-  component: Uploader
+  component: Uploader 
 }
 
 const Template = (args) => <Uploader {...args} />
@@ -18,6 +18,7 @@ Default.args = {
   headers: {
     Authorization: `token ${process.env.TEST_PLATFORM_API_TOKEN || '<token>'}`
   },
+  readPermission: 'public',
   disabled: false,
   maxNumberOfFiles: 0,
   accept: { "*": [] }

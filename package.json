@@ -5,6 +5,14 @@
   "version": "1.3.0",
   "description": "Use the EMD Cloud components with one package",
   "main": "src/index.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "tsconfig.json",
+    "package.json",
+    "yarn.lock"
+  ],
   "scripts": {
     "test": "vitest --watch=false",
     "test:watch": "vitest --watch",
