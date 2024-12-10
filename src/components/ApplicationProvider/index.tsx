@@ -16,7 +16,7 @@ interface IApplicationProviderProps {
 }
 
 const ApplicationProvider = ({
-  apiUrl = 'api.emd.one',
+  apiUrl = 'https://api.emd.one',
   app,
   tokenType = 'token',
   children,

@@ -4,7 +4,8 @@
   "types": "index.d.ts",
   "version": "1.4.0",
   "description": "Use the EMD Cloud components with one package",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "files": [
     "dist",
     "README.md",

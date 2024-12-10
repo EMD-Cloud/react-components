@@ -66,7 +66,7 @@ import { useUploader } from '@emd-cloud/react-components';
 const MyUploaderComponent = () => {
   const { uploadFiles, isProccess } = useUploader({
     options: {
-      apiUrl: 'example.com',
+      apiUrl: 'https://example.com',
       app: 'myApp',
     },
     onUpdate: (files) => {
@@ -136,7 +136,7 @@ import { useUploader, useDropzone } from '@emd-cloud/react-components';
 const MyUploaderComponent = () => {
   const { uploadFiles } = useUploader({
     options: {
-      apiUrl: 'example.com',
+      apiUrl: 'https://example.com',
       app: 'myApp',
     },
     onUpdate: (files) => {
