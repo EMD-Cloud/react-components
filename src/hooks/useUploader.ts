@@ -66,14 +66,14 @@ const useUploader = ({
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`
+    return `${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`
   }, [options, integrationId, appData])
 
   const getFileUrl = useCallback((fileId: string) => {
     const apiUrl = options?.apiUrl || appData?.apiUrl
     const app = options?.app || appData?.app
 
-    return `https://${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/${fileId}`
+    return `${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/${fileId}`
   }, [options, integrationId, appData])
 
   useEffect(() => {
