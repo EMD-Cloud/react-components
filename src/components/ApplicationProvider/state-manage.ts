@@ -26,6 +26,7 @@ export interface ApplicationDataType {
   app: string
   tokenType: string
   user: UserType | null
+  dispatch: React.Dispatch<ApplicationctionType>
 }
 
 interface ApplicationPayloadType {
@@ -33,10 +34,15 @@ interface ApplicationPayloadType {
   app?: string
   tokenType?: string
   token?: string
+  user: UserType | null
+}
+
+export enum ACTION {
+  SET_USER = 1,
 }
 
 export interface ApplicationctionType {
-  type: string
+  type: ACTION
   payload: ApplicationPayloadType
 }
 
@@ -44,11 +50,7 @@ const reducer = (
   state: ApplicationDataType,
   { type, payload }: ApplicationctionType,
 ) => {
-  if (type === 'login') {
-    return { ...state, ...payload }
-  }
-
-  if (type === 'registration') {
+  if (type === ACTION.SET_USER) {
     return { ...state, ...payload }
   }
 

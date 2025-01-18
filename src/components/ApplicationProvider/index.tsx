@@ -21,7 +21,7 @@ const ApplicationProvider = ({
   tokenType = 'token',
   children,
 }: IApplicationProviderProps) => {
-  const [value] = React.useReducer<
+  const [value, dispatch] = React.useReducer<
     (
       state: ApplicationDataType,
       { type, payload }: ApplicationctionType,
@@ -30,11 +30,12 @@ const ApplicationProvider = ({
     apiUrl,
     app,
     tokenType,
-    user: null
+    user: null,
+    dispatch: () => {},
   })
 
   return (
-    <ApplicationContext.Provider value={value}>
+    <ApplicationContext.Provider value={{ ...value, dispatch }}>
       {children}
     </ApplicationContext.Provider>
   )
