@@ -2,7 +2,7 @@
 import * as React from 'react'
 
 // ** Source code Imports
-import ApplicationContext from './context'
+import { ApplicationContext, DispatchContext } from './context'
 import reducer, {
   ApplicationDataType,
   ApplicationctionType,
@@ -16,8 +16,8 @@ interface IApplicationProviderProps {
 }
 
 const ApplicationProvider = ({
-  apiUrl = 'https://api.emd.one',
   app,
+  apiUrl = 'https://api.emd.one',
   tokenType = 'token',
   children,
 }: IApplicationProviderProps) => {
@@ -31,12 +31,13 @@ const ApplicationProvider = ({
     app,
     tokenType,
     user: null,
-    dispatch: () => {},
   })
 
   return (
-    <ApplicationContext.Provider value={{ ...value, dispatch }}>
-      {children}
+    <ApplicationContext.Provider value={value}>
+      <DispatchContext.Provider value={dispatch}>
+        {children}
+      </DispatchContext.Provider>
     </ApplicationContext.Provider>
   )
 }

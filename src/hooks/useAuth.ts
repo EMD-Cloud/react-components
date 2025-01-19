@@ -2,7 +2,10 @@
 import { useContext, useMemo } from 'react'
 
 // ** Source code Imports
-import ApplicationContext from '../components/ApplicationProvider/context'
+import {
+  ApplicationContext,
+  DispatchContext,
+} from '../components/ApplicationProvider/context'
 import {
   ACTION,
   UserType,
@@ -21,6 +24,7 @@ export type SignUpUserType = {
 
 const useAuth = () => {
   const appData = useContext(ApplicationContext)
+  const dispatch = useContext(DispatchContext)
 
   const authorization = (token: UserType['token']) => {
     return new Promise((resolve, reject) => {
@@ -42,9 +46,9 @@ const useAuth = () => {
         .then((response) => {
           const { data } = response
 
-          appData.dispatch({
+          dispatch({
             type: ACTION.SET_USER,
-            payload: { user: data },
+            payload: data,
           })
 
           resolve(data)
@@ -74,9 +78,9 @@ const useAuth = () => {
         .then((response) => {
           const { data } = response
 
-          appData.dispatch({
+          dispatch({
             type: ACTION.SET_USER,
-            payload: { user: data },
+            payload: data,
           })
 
           resolve(data)
@@ -106,9 +110,9 @@ const useAuth = () => {
         .then((response) => {
           const { data } = response
 
-          appData.dispatch({
+          dispatch({
             type: ACTION.SET_USER,
-            payload: { user: data },
+            payload: data,
           })
 
           resolve(data)

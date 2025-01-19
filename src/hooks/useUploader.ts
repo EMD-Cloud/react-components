@@ -1,12 +1,19 @@
 // ** React Importsi
-import { useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react'
+import {
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useMemo,
+} from 'react'
 
 // ** Modules Imports
 import { Upload } from 'tus-js-client'
 import { v4 as uuidv4 } from 'uuid'
 
 // ** Source code Imports
-import ApplicationContext from '../components/ApplicationProvider/context'
+import { ApplicationContext } from '../components/ApplicationProvider/context'
 
 export type UploaderOptions = {
   apiUrl: string
@@ -30,7 +37,7 @@ export type FileType = {
 export enum ReadPermissionsType {
   Public = 'public',
   OnlyAuthUser = 'onlyAuthUser',
-  OnlyAppStaff = 'onlyAppStaff'
+  OnlyAppStaff = 'onlyAppStaff',
 }
 
 export interface UploaderType {
@@ -71,12 +78,15 @@ const useUploader = ({
     return `${apiUrl}/api/${app}/uploader/chunk/${integrationId}/s3/`
   }, [options, integrationId, appData])
 
-  const getFileUrl = useCallback((fileId: string) => {
-    const apiUrl = options?.apiUrl || appData?.apiUrl
-    const app = options?.app || appData?.app
+  const getFileUrl = useCallback(
+    (fileId: string) => {
+      const apiUrl = options?.apiUrl || appData?.apiUrl
+      const app = options?.app || appData?.app
 
-    return `${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/${fileId}`
-  }, [options, integrationId, appData])
+      return `${apiUrl}/api/${app}/uploader/chunk/${integrationId}/file/${fileId}`
+    },
+    [options, integrationId, appData],
+  )
 
   useEffect(() => {
     const filesInProgress = !!observedfiles.find(
@@ -96,14 +106,16 @@ const useUploader = ({
           chunkSize,
           retryDelays,
           headers: {
-            ...(appData.user?.token && { Authorization: `token ${appData.user.token}` }),
+            ...(appData.user?.token && {
+              Authorization: `token ${appData.user.token}`,
+            }),
             ...headers,
           },
           metadata: {
             filename: file.name,
             filetype: file.type,
             read_permission: readPermission,
-            presigned_url_ttl: presignedUrlTTL.toString()
+            presigned_url_ttl: presignedUrlTTL.toString(),
           },
           onError: (error) => {
             setObservedFiles((state: FileType[]) => {
@@ -139,11 +151,14 @@ const useUploader = ({
           },
           onSuccess: (payload) => {
             console.log(upload.url)
-            const xFileDownloadId = payload.lastResponse.getHeader('x-file-download-id')
+            const xFileDownloadId =
+              payload.lastResponse.getHeader('x-file-download-id')
 
             setObservedFiles((state: FileType[]) => {
               return state.map((item) => {
-                const fileUrl = xFileDownloadId ? getFileUrl(xFileDownloadId) : undefined
+                const fileUrl = xFileDownloadId
+                  ? getFileUrl(xFileDownloadId)
+                  : undefined
 
                 if (item.id === fileId) {
                   return {

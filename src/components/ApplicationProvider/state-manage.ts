@@ -22,28 +22,20 @@ export interface UserType {
 }
 
 export interface ApplicationDataType {
-  apiUrl: string
   app: string
-  tokenType: string
-  user: UserType | null
-  dispatch: React.Dispatch<ApplicationctionType>
-}
-
-interface ApplicationPayloadType {
-  apiUrl?: string
-  app?: string
   tokenType?: string
-  token?: string
-  user: UserType | null
+  user?: UserType | null
+  apiUrl?: string
 }
 
 export enum ACTION {
   SET_USER = 1,
+  SET_APP = 2,
 }
 
 export interface ApplicationctionType {
   type: ACTION
-  payload: ApplicationPayloadType
+  payload: any
 }
 
 const reducer = (
@@ -51,7 +43,7 @@ const reducer = (
   { type, payload }: ApplicationctionType,
 ) => {
   if (type === ACTION.SET_USER) {
-    return { ...state, ...payload }
+    return { ...state, user: payload }
   }
 
   throw Error('Unknown action.')

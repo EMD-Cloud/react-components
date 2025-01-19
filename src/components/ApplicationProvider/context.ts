@@ -2,14 +2,15 @@
 import { createContext } from 'react'
 
 // ** Source code Imports
-import { ApplicationDataType } from './state-manage'
+import { ApplicationctionType, ApplicationDataType } from './state-manage'
 
-const ApplicationContext = createContext<ApplicationDataType>({
+export const ApplicationContext = createContext<ApplicationDataType>({
   apiUrl: '',
   app: '',
   tokenType: '',
   user: null,
-  dispatch: () => {},
 })
 
-export default ApplicationContext
+export const DispatchContext = createContext<
+  React.Dispatch<ApplicationctionType>
+>(() => {})
