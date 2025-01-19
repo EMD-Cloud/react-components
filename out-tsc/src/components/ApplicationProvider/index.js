@@ -1,15 +1,16 @@
 // ** React Imports
 import * as React from 'react';
 // ** Source code Imports
-import ApplicationContext from './context';
+import { ApplicationContext, DispatchContext } from './context';
 import reducer from './state-manage';
-const ApplicationProvider = ({ apiUrl = 'api.emd.one', app, tokenType = 'token', children, }) => {
-    const [value] = React.useReducer(reducer, {
+const ApplicationProvider = ({ app, apiUrl = 'https://api.emd.one', tokenType = 'token', children, }) => {
+    const [value, dispatch] = React.useReducer(reducer, {
         apiUrl,
         app,
         tokenType,
-        user: null
+        user: null,
     });
-    return (React.createElement(ApplicationContext.Provider, { value: value }, children));
+    return (React.createElement(ApplicationContext.Provider, { value: value },
+        React.createElement(DispatchContext.Provider, { value: dispatch }, children)));
 };
 export default ApplicationProvider;

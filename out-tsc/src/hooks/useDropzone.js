@@ -2,7 +2,7 @@
 import { useState, useMemo, useCallback, useRef, } from 'react';
 // ** Source code Imports
 import { acceptPropAsAcceptAttr } from '../tools/uploader';
-const useDropzone = ({ accept, onDragOver = () => {
+const useDropzone = ({ accept = { '*': [] }, onDragOver = () => {
     /* Empty... */
 }, onDragLeave = () => {
     /* Empty... */

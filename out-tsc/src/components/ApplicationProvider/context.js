@@ -1,9 +1,9 @@
 // ** React Imports
 import { createContext } from 'react';
-const ApplicationContext = createContext({
+export const ApplicationContext = createContext({
     apiUrl: '',
     app: '',
     tokenType: '',
-    user: null
+    user: null,
 });
-export default ApplicationContext;
+export const DispatchContext = createContext(() => { });
