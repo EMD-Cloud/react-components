@@ -171,5 +171,3 @@ In this example, the  `useDropzone`  hook is used to create a dropzone, and the 
 ## Conclusion
 
 This library will simplify the integration and use of EMD Cloud services in your React application.
-
-<!-- fix -->
