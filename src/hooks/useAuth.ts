@@ -26,9 +26,7 @@ const useAuth = () => {
   const appData = useContext(ApplicationContext)
   const dispatch = useContext(DispatchContext)
 
-  const authorization = (
-    token: UserType['token'],
-  ): Promise<UserType | Error> => {
+  const authorization = (token: UserType['token']): Promise<UserType> => {
     return new Promise((resolve, reject) => {
       fetch(`${appData.apiUrl}/api/${appData.app}/auth/me`, {
         method: 'POST',
@@ -61,7 +59,7 @@ const useAuth = () => {
     })
   }
 
-  const logInUser = (params: LogInUserType): Promise<UserType | Error> => {
+  const logInUser = (params: LogInUserType): Promise<UserType> => {
     return new Promise((resolve, reject) => {
       fetch(`${appData.apiUrl}/api/${appData.app}/auth/login`, {
         method: 'POST',
@@ -93,7 +91,7 @@ const useAuth = () => {
     })
   }
 
-  const signUpUser = (params: SignUpUserType): Promise<UserType | Error> => {
+  const signUpUser = (params: SignUpUserType): Promise<UserType> => {
     return new Promise((resolve, reject) => {
       fetch(`${appData.apiUrl}/api/${appData.app}/auth/register`, {
         method: 'POST',
