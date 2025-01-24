@@ -123,11 +123,18 @@ const useAuth = () => {
     })
   }
 
+  const logOutUser = () => {
+    dispatch({
+      type: ACTION.SET_USER,
+      payload: null,
+    })
+  }
+
   const userInfo = useMemo(() => {
     return appData.user
   }, [appData.user])
 
-  return { authorization, logInUser, signUpUser, userInfo }
+  return { authorization, logInUser, logOutUser, signUpUser, userInfo }
 }
 
 export default useAuth
