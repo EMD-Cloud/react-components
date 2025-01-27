@@ -2,7 +2,7 @@
   "name": "@emd-cloud/react-components",
   "type": "module",
   "types": "index.d.ts",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Use the EMD Cloud components with one package",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
