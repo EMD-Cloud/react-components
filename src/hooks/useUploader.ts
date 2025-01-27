@@ -38,6 +38,7 @@ export enum ReadPermissionsType {
   Public = 'public',
   OnlyAuthUser = 'onlyAuthUser',
   OnlyAppStaff = 'onlyAppStaff',
+  OnlyPermittedUsers = 'onlyPermittedUsers',
 }
 
 export interface UploaderType {
@@ -46,6 +47,7 @@ export interface UploaderType {
   integration?: string
   headers?: Record<string, string | number | boolean>
   readPermission?: ReadPermissionsType
+  permittedUsers?: string[]
   presignedUrlTTL?: number
   retryDelays?: number[]
   onBeforeUpload?: (files: File[]) => boolean
@@ -58,6 +60,7 @@ const useUploader = ({
   integration,
   headers,
   readPermission = ReadPermissionsType.OnlyAppStaff,
+  permittedUsers,
   presignedUrlTTL = 60,
   retryDelays = [0, 3000, 5000, 10000, 20000],
   onBeforeUpload = () => true,
@@ -115,6 +118,7 @@ const useUploader = ({
             filename: file.name,
             filetype: file.type,
             read_permission: readPermission,
+            ...(permittedUsers && { permitted_users: permittedUsers.join(';') }),
             presigned_url_ttl: presignedUrlTTL.toString(),
           },
           onError: (error) => {
