@@ -4,6 +4,8 @@
 -   [Overview](#overview)
 -   [Getting Started](#getting-started)
 -   [Hooks](#hooks)
+    -   [Authorization Hooks](#authorization-hooks)
+        -   [Hook: useAuth](#hook--useauth)
     -   [Uploader Hooks](#uploader-hooks)
         -   [Hook: useUploader](#hook--useuploader)
         -   [Method: useDropzone](#method--usedropzone)
@@ -19,8 +21,9 @@ The EMD Cloud React components provide a set of React components for interacting
     
 2.  Obtain your application’s API token.
     
-3.  Install the npm or yarn package: 
-	 **NPM**
+3.  Install the npm or yarn package:
+
+	  **NPM**
     ```
     npm install @emd-cloud/react-components
     ```
@@ -33,6 +36,78 @@ That's it! The EMD Cloud React components are now ready to use.
 <br>
 
 ## Hooks
+
+### Authorization Hooks:
+
+#### Hook:  `useAuth`
+
+**Description:**
+
+This hook manages user authentication processes through the EMD Cloud platform, including login, registration, and logout, using application context and state management. It allows you to retrieve information about the current user and update the user's state in the application.
+
+**Parameters:**
+
+-   `logInUser` (function): log in a user.
+    -   `params` (object): object containing login and password.
+-   `signUpUser`: function to register a new user.
+    -   `params` (object): object containing login and password.
+-   `authorization` (function): check authentication status using a token.
+-   `token` (string): access token to authorize the user.
+-   `logOutUser` (function): called to log out a user.
+
+**Return Value:**  Returns an object with two properties:
+
+-   `userInfo` (object): with current user information.
+-   `authorization` (function): for authentication.
+-   `logInUser` (function): for log in.
+-   `logOutUser` (function): for log out.
+-   `signUpUser` (function): for sign up.
+
+**Example:**
+```javascript
+import { useAuth } from '../hooks/useAuth';
+
+const MyAuthComponent = () => {
+  const { logInUser, signUpUser, logOutUser, userInfo } = useAuth();
+
+  const handleLogin = async (login, password) => {
+    try {
+      const user = await logInUser({ login, password });
+      console.log('Logged in user:', user);
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  const handleSignUp = async (login, password) => {
+    try {
+      const newUser = await signUpUser({ login, password });
+      console.log('Registered user:', newUser);
+    } catch (error) {
+      console.error('Registration failed:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    logOutUser();
+    console.log('User logged out.');
+  };
+
+  return (
+    <div>
+      <h3>Current User: {userInfo ? userInfo.login : 'Not logged in'}</h3>
+      {/* Implement your login and signup forms here */}
+      <button onClick={() => handleLogin('user@example.com', 'password123')}>Login</button>
+      <button onClick={() => handleSignUp('newuser@example.com', 'password123')}>Sign Up</button>
+      <button onClick={handleLogout}>Logout</button>
+    </div>
+  );
+};
+```
+
+In this example, the `useAuth` hook is used to manage the user authentication processes and get information about the current user.
+
+<br>
 
 ### Uploader Hooks:
 
@@ -167,6 +242,7 @@ const MyUploaderComponent = () => {
 ```
 
 In this example, the  `useDropzone`  hook is used to create a dropzone, and the uploaded files are passed to  `uploadFiles`  from the  `useUploader`  hook. The user can drag files into the specified area or select files using the button.
+
 
 ## Conclusion
 
