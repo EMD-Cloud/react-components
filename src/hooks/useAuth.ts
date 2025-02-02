@@ -20,6 +20,9 @@ export type LogInUserType = {
 export type SignUpUserType = {
   login: string
   password: string
+  firstName?: string
+  lastName?: string
+  customFields?: object
 }
 
 const useAuth = () => {
