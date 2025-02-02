@@ -10,8 +10,9 @@ export var ReadPermissionsType;
     ReadPermissionsType["Public"] = "public";
     ReadPermissionsType["OnlyAuthUser"] = "onlyAuthUser";
     ReadPermissionsType["OnlyAppStaff"] = "onlyAppStaff";
+    ReadPermissionsType["OnlyPermittedUsers"] = "onlyPermittedUsers";
 })(ReadPermissionsType || (ReadPermissionsType = {}));
-const useUploader = ({ options, chunkSize, integration, headers, readPermission = ReadPermissionsType.OnlyAppStaff, presignedUrlTTL = 60, retryDelays = [0, 3000, 5000, 10000, 20000], onBeforeUpload = () => true, onUpdate, }) => {
+const useUploader = ({ options, chunkSize, integration, headers, readPermission = ReadPermissionsType.OnlyAppStaff, permittedUsers, presignedUrlTTL = 60, retryDelays = [0, 3000, 5000, 10000, 20000], onBeforeUpload = () => true, onUpdate, }) => {
     const isFirstRun = useRef(true);
     const [isProccess, setProccess] = useState(false);
     const [observedfiles, setObservedFiles] = useState([]);
@@ -52,6 +53,7 @@ const useUploader = ({ options, chunkSize, integration, headers, readPermission 
                     filename: file.name,
                     filetype: file.type,
                     read_permission: readPermission,
+                    ...(permittedUsers && { permitted_users: permittedUsers.join(';') }),
                     presigned_url_ttl: presignedUrlTTL.toString(),
                 },
                 onError: (error) => {
