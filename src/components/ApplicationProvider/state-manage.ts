@@ -1,49 +1,37 @@
-export interface UserType {
-  _id: string
-  space: string
-  login: string
-  accountVerified: boolean
-  accountStatus: 'pending' | 'approved' | 'rejected'
-  external: boolean
-  firstName: string
-  lastName: string
-  patronymicName: string
-  avatarUrl: string
-  level: number
-  points: number
-  quotaFreeSpaces: number
-  passwordRecoveryRequest: string | null
-  ping: string | null
-  linkedAccounts: Record<string, any>
-  customFields: Record<string, any>
-  lastActivityInMinutes: null | number
-  pingStatus: 'online' | 'offline'
-  token: string
-}
+// Import types from SDK instead of duplicating
+import type { UserData } from '@emd-cloud/sdk'
+
+export type UserType = UserData
 
 export interface ApplicationDataType {
   app: string
   tokenType?: string
   user?: UserType | null
   apiUrl?: string
+  sdkInstance?: any | null
 }
 
 export enum ACTION {
   SET_USER = 1,
   SET_APP = 2,
+  SET_SDK_INSTANCE = 3,
 }
 
-export interface ApplicationctionType {
+export interface ApplicationActionType {
   type: ACTION
   payload: any
 }
 
 const reducer = (
   state: ApplicationDataType,
-  { type, payload }: ApplicationctionType,
+  { type, payload }: ApplicationActionType,
 ) => {
   if (type === ACTION.SET_USER) {
     return { ...state, user: payload }
+  }
+
+  if (type === ACTION.SET_SDK_INSTANCE) {
+    return { ...state, sdkInstance: payload }
   }
 
   throw Error('Unknown action.')

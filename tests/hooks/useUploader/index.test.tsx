@@ -4,8 +4,8 @@ import { renderHook } from '@testing-library/react'
 
 import config from '../../config'
 
-import { useUploader } from '../../../dist'
-import { FileType } from '../../../dist/hooks/useUploader'
+import { useUploader } from '../../../src/hooks'
+import { FileType } from '../../../src/hooks/useUploader'
 
 describe('Test useUploader', () => {
   const testFiles: File[] = []

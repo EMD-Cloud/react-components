@@ -1,17 +1,22 @@
 // ** React Imports
 import * as React from 'react'
 
+// ** External Imports
+import { EmdCloud, AppEnvironment } from '@emd-cloud/sdk'
+
 // ** Source code Imports
 import { ApplicationContext, DispatchContext } from './context'
 import reducer, {
   ApplicationDataType,
-  ApplicationctionType,
+  ApplicationActionType,
+  ACTION,
 } from './state-manage'
 
 interface IApplicationProviderProps {
   apiUrl?: string
   app: string
   tokenType?: string
+  authToken?: string
   children: React.ReactNode
 }
 
@@ -19,19 +24,41 @@ const ApplicationProvider = ({
   app,
   apiUrl = 'https://api.emd.one',
   tokenType = 'token',
+  authToken,
   children,
 }: IApplicationProviderProps) => {
   const [value, dispatch] = React.useReducer<
     (
       state: ApplicationDataType,
-      { type, payload }: ApplicationctionType,
+      { type, payload }: ApplicationActionType,
     ) => ApplicationDataType
   >(reducer, {
     apiUrl,
     app,
     tokenType,
     user: null,
+    sdkInstance: null,
   })
+
+  // Initialize SDK instance when component mounts or when dependencies change
+  React.useEffect(() => {
+    try {
+      const sdkInstance = new EmdCloud({
+        environment: AppEnvironment.Client,
+        appId: app,
+        apiUrl,
+        ...(authToken && { apiToken: authToken })
+      })
+      
+      dispatch({
+        type: ACTION.SET_SDK_INSTANCE,
+        payload: sdkInstance,
+      })
+    } catch (error) {
+      // SDK initialization failed, continue without it
+      console.warn('@emd-cloud/sdk initialization failed:', error)
+    }
+  }, [app, apiUrl, authToken])
 
   return (
     <ApplicationContext.Provider value={value}>

@@ -130,3 +130,6 @@ dist
 .pnp.*
 
 *storybook.log
+.claude/*
+out-tsc
+.idea

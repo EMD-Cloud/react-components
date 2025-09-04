@@ -3,12 +3,14 @@
 
 -   [Overview](#overview)
 -   [Getting Started](#getting-started)
+-   [Components](#components)
+    -   [ApplicationProvider](#applicationprovider)
 -   [Hooks](#hooks)
     -   [Authorization Hooks](#authorization-hooks)
         -   [Hook: useAuth](#hook--useauth)
     -   [Uploader Hooks](#uploader-hooks)
         -   [Hook: useUploader](#hook--useuploader)
-        -   [Method: useDropzone](#method--usedropzone)
+        -   [Hook: useDropzone](#hook--usedropzone)
 -   [Conclusion](#conclusion)
 
 ## Overview
@@ -19,19 +21,148 @@ The EMD Cloud React components provide a set of React components for interacting
 
 1.  Register on the EMD Cloud platform and create an application at  [https://console.cloud.emd.one](https://console.cloud.emd.one/).
     
-2.  Obtain your application’s API token.
+2.  Obtain your application's API token.
     
-3.  Install the npm or yarn package:
+3.  Install the required packages:
 
-	  **NPM**
-    ```
+    **NPM**
+    ```bash
+    # Install the React components
     npm install @emd-cloud/react-components
+    
+    # Install the required peer dependencies
+    npm install @emd-cloud/sdk
     ```
-    **Yarn**
-    ```sh
-    yarn add @emd-cloud/react-components
+
+    **For TypeScript projects, types are included automatically. No additional @types packages needed.**
+
+4.  Wrap your application with the ApplicationProvider:
+
+    ```javascript
+    import { ApplicationProvider } from '@emd-cloud/react-components';
+    
+    function App() {
+      return (
+        <ApplicationProvider 
+          app="your-app-id" 
+          apiUrl="https://api.emd.one" // optional, defaults to this value
+          authToken="your-auth-token" // optional, can be set later
+        >
+          {/* Your app components */}
+        </ApplicationProvider>
+      );
+    }
     ```
+
 That's it! The EMD Cloud React components are now ready to use.
+
+## TypeScript Support
+
+This library provides full TypeScript support with exported types from the EMD Cloud SDK. You can import and use these types in your TypeScript applications:
+
+```typescript
+import { 
+  UserData,
+  AccountStatus,
+  PingStatus, 
+  SocialProvider,
+  AppEnvironment,
+  ForgotPassData,
+  ForgotPassCheckCodeData,
+  OAuthUrlResponse
+} from '@emd-cloud/react-components';
+
+// Use the types in your components
+interface UserProfileProps {
+  user: UserData;
+  onStatusChange: (status: AccountStatus) => void;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ user, onStatusChange }) => {
+  return (
+    <div>
+      <h3>{user.firstName} {user.lastName}</h3>
+      <p>Status: {user.accountStatus}</p>
+      <p>Online: {user.pingStatus === PingStatus.Online ? 'Yes' : 'No'}</p>
+    </div>
+  );
+};
+```
+
+**Available Types:**
+
+- `UserData` - Complete user information interface
+- `AccountStatus` - User account status enum (`Pending`, `Approved`, `Rejected`)
+- `PingStatus` - User online status enum (`Online`, `Offline`)
+- `SocialProvider` - OAuth provider enum (`VK`, `YANDEX`)
+- `AppEnvironment` - Application environment enum (`Client`, `Server`)
+- `ForgotPassData` - Password recovery request data
+- `ForgotPassCheckCodeData` - Password recovery code verification data
+- `OAuthUrlResponse` - OAuth URL response interface
+
+<br>
+
+## Components
+
+### ApplicationProvider
+
+**Description:**
+
+The ApplicationProvider is the foundational component that wraps your React application to enable EMD Cloud functionality. It automatically initializes and manages the EMD Cloud SDK instance, providing context to all child components and hooks. This provider handles SDK initialization, token management, and maintains the connection to EMD Cloud services.
+
+**Props:**
+
+-   `app` (string, **required**): Your EMD Cloud application ID obtained from the console
+-   `apiUrl` (string, optional): EMD Cloud API endpoint URL. Defaults to `"https://api.emd.one"`
+-   `authToken` (string, optional): Initial authentication token. Can be set later via hooks
+-   `tokenType` (string, optional): Authentication token type for API requests. Defaults to `"token"`
+-   `children` (ReactNode, **required**): Your application components
+
+**Key Features:**
+
+- **Automatic SDK Management**: Initializes EMD Cloud SDK on mount and manages its lifecycle
+- **Dynamic Loading**: Gracefully handles cases where SDK is not installed
+- **Token Management**: Maintains authentication state across the application
+- **Context Provision**: Provides SDK instance and user data to all child components
+- **Error Handling**: Fails gracefully with helpful warnings when SDK is unavailable
+
+**Example:**
+
+```javascript
+import { ApplicationProvider } from '@emd-cloud/react-components';
+
+function App() {
+  return (
+    <ApplicationProvider 
+      app="your-app-id" 
+      apiUrl="https://api.emd.one" // optional, defaults to this value
+      authToken="your-auth-token" // optional, can be set later via useAuth
+      tokenType="token" // optional, defaults to "token"
+    >
+      <YourAppComponents />
+    </ApplicationProvider>
+  );
+}
+
+// With environment variables
+function App() {
+  return (
+    <ApplicationProvider 
+      app={process.env.REACT_APP_EMD_CLOUD_APP_ID}
+      authToken={localStorage.getItem('emd_auth_token')}
+    >
+      <YourAppComponents />
+    </ApplicationProvider>
+  );
+}
+```
+
+**Important Notes:**
+
+- The ApplicationProvider **must** wrap any components that use EMD Cloud hooks
+- The SDK instance is available after the component mounts (handles async initialization)  
+- All authentication and user management flows depend on this provider being properly configured
+- If the SDK peer dependency is not installed, the provider will log a warning and continue without SDK functionality
 
 <br>
 
@@ -43,29 +174,36 @@ That's it! The EMD Cloud React components are now ready to use.
 
 **Description:**
 
-This hook manages user authentication processes through the EMD Cloud platform, including login, registration, and logout, using application context and state management. It allows you to retrieve information about the current user and update the user's state in the application.
+This hook manages user authentication processes through the EMD Cloud platform using the EMD Cloud SDK. It provides methods for login, registration, logout, social authentication, and password recovery. The hook automatically manages user state and integrates with the SDK for secure authentication.
 
-**Parameters:**
+**Available Methods:**
 
--   `logInUser` (function): log in a user.
-    -   `params` (object): object containing login and password.
--   `signUpUser`: function to register a new user.
-    -   `params` (object): object containing login and password.
--   `authorization` (function): check authentication status using a token.
--   `token` (string): access token to authorize the user.
--   `logOutUser` (function): called to log out a user.
+-   `logInUser` (function): Log in a user with email/password.
+-   `signUpUser` (function): Register a new user.
+-   `authorization` (function): Check authentication status using a token.
+-   `socialLogin` (function): Initiate OAuth login with VK or Yandex.
+-   `exchangeOAuthToken` (function): Complete OAuth flow by exchanging secret for token.
+-   `forgotPassword` (function): Initiate password recovery process.
+-   `forgotPasswordCheckCode` (function): Verify password reset code.
+-   `forgotPasswordChange` (function): Complete password reset.
+-   `logOutUser` (function): Log out the current user.
 
-**Return Value:**  Returns an object with two properties:
+**Return Value:** Returns an object with:
 
--   `userInfo` (object): with current user information.
--   `authorization` (function): for authentication.
--   `logInUser` (function): for log in.
--   `logOutUser` (function): for log out.
--   `signUpUser` (function): for sign up.
+-   `userInfo` (object): Current user information.
+-   `authorization` (function): For authentication verification.
+-   `logInUser` (function): For email/password login.
+-   `signUpUser` (function): For user registration.
+-   `socialLogin` (function): For OAuth authentication.
+-   `exchangeOAuthToken` (function): For completing OAuth flow.
+-   `forgotPassword` (function): For initiating password recovery.
+-   `forgotPasswordCheckCode` (function): For verifying reset codes.
+-   `forgotPasswordChange` (function): For completing password reset.
+-   `logOutUser` (function): For logout.
 
-**Example:**
+**Basic Authentication Example:**
 ```javascript
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@emd-cloud/react-components';
 
 const MyAuthComponent = () => {
   const { logInUser, signUpUser, logOutUser, userInfo } = useAuth();
@@ -81,7 +219,13 @@ const MyAuthComponent = () => {
 
   const handleSignUp = async (login, password) => {
     try {
-      const newUser = await signUpUser({ login, password });
+      const newUser = await signUpUser({ 
+        login, 
+        password,
+        firstName: 'John',
+        lastName: 'Doe',
+        captchaToken: 'your-captcha-token' // optional
+      });
       console.log('Registered user:', newUser);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -105,7 +249,108 @@ const MyAuthComponent = () => {
 };
 ```
 
-In this example, the `useAuth` hook is used to manage the user authentication processes and get information about the current user.
+**Social Login Example:**
+```javascript
+import { useAuth } from '@emd-cloud/react-components';
+
+const SocialLoginComponent = () => {
+  const { socialLogin, exchangeOAuthToken } = useAuth();
+
+  const handleVKLogin = async () => {
+    try {
+      const response = await socialLogin({
+        provider: 'vk',
+        redirectUrl: 'https://myapp.com/auth/callback'
+      });
+      
+      // Redirect user to VK for authentication
+      window.location.href = response.url;
+    } catch (error) {
+      console.error('Social login failed:', error);
+    }
+  };
+
+  const handleYandexLogin = async () => {
+    try {
+      const response = await socialLogin({
+        provider: 'yandex',
+        redirectUrl: 'https://myapp.com/auth/callback'
+      });
+      
+      // Redirect user to Yandex for authentication
+      window.location.href = response.url;
+    } catch (error) {
+      console.error('Social login failed:', error);
+    }
+  };
+
+  // Handle OAuth callback (call this on your callback page)
+  const handleOAuthCallback = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const secret = urlParams.get('secret');
+    
+    if (secret) {
+      try {
+        const userData = await exchangeOAuthToken(secret);
+        console.log('User authenticated:', userData);
+        // Redirect to dashboard or main page
+      } catch (error) {
+        console.error('OAuth token exchange failed:', error);
+      }
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleVKLogin}>Login with VK</button>
+      <button onClick={handleYandexLogin}>Login with Yandex</button>
+    </div>
+  );
+};
+```
+
+**Password Recovery Example:**
+```javascript
+import { useAuth } from '@emd-cloud/react-components';
+
+const PasswordRecoveryComponent = () => {
+  const { forgotPassword, forgotPasswordCheckCode, forgotPasswordChange } = useAuth();
+
+  const handleForgotPassword = async (email) => {
+    try {
+      const response = await forgotPassword({ email });
+      console.log('Password reset requested:', response.requestId);
+      // Save requestId for next steps
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+    }
+  };
+
+  const handleCheckCode = async (requestId, code) => {
+    try {
+      const response = await forgotPasswordCheckCode({ requestId, code });
+      console.log('Code verified:', response);
+    } catch (error) {
+      console.error('Code verification failed:', error);
+    }
+  };
+
+  const handleChangePassword = async (requestId, newPassword, newPasswordRepeat) => {
+    try {
+      const userData = await forgotPasswordChange({ 
+        requestId, 
+        newPassword, 
+        newPasswordRepeat 
+      });
+      console.log('Password changed successfully:', userData);
+    } catch (error) {
+      console.error('Password change failed:', error);
+    }
+  };
+
+  // Implementation details for your forms...
+};
+```
 
 <br>
 
@@ -244,6 +489,118 @@ const MyUploaderComponent = () => {
 
 In this example, the  `useDropzone`  hook is used to create a dropzone, and the uploaded files are passed to  `uploadFiles`  from the  `useUploader`  hook. The user can drag files into the specified area or select files using the button.
 
+## Advanced Usage
+
+### Direct Context Access
+
+For advanced use cases, you can directly access the application context and SDK instance:
+
+```typescript
+import { useContext } from 'react';
+import { ApplicationContext, DispatchContext } from '@emd-cloud/react-components';
+
+const AdvancedComponent = () => {
+  const appData = useContext(ApplicationContext);
+  const dispatch = useContext(DispatchContext);
+  
+  // Access the SDK instance directly
+  const handleDirectSDKCall = async () => {
+    if (appData.sdkInstance) {
+      try {
+        const result = await appData.sdkInstance.auth.authorization();
+        console.log('Direct SDK call result:', result);
+      } catch (error) {
+        console.error('SDK call failed:', error);
+      }
+    }
+  };
+  
+  // Access user data
+  const currentUser = appData.user;
+  
+  return (
+    <div>
+      <p>App ID: {appData.app}</p>
+      <p>API URL: {appData.apiUrl}</p>
+      <p>User: {currentUser?.login || 'Not logged in'}</p>
+      <button onClick={handleDirectSDKCall}>Direct SDK Call</button>
+    </div>
+  );
+};
+```
+
+### Working with SDK Types
+
+Use the exported types for better type safety:
+
+```typescript
+import { UserData, SocialProvider, useAuth } from '@emd-cloud/react-components';
+
+const TypeSafeAuthComponent = () => {
+  const { socialLogin, userInfo } = useAuth();
+  
+  const handleSocialLogin = async (provider: SocialProvider) => {
+    try {
+      const response = await socialLogin({
+        provider,
+        redirectUrl: window.location.origin + '/callback'
+      });
+      window.location.href = response.url;
+    } catch (error) {
+      console.error('Social login failed:', error);
+    }
+  };
+  
+  const renderUserInfo = (user: UserData) => (
+    <div>
+      <h3>{user.firstName} {user.lastName}</h3>
+      <p>Email: {user.login}</p>
+      <p>Level: {user.level}</p>
+      <p>Points: {user.points}</p>
+      <span className={user.pingStatus === 'online' ? 'online' : 'offline'}>
+        {user.pingStatus}
+      </span>
+    </div>
+  );
+  
+  return (
+    <div>
+      {userInfo && renderUserInfo(userInfo)}
+      <button onClick={() => handleSocialLogin(SocialProvider.VK)}>
+        Login with VK
+      </button>
+      <button onClick={() => handleSocialLogin(SocialProvider.YANDEX)}>
+        Login with Yandex
+      </button>
+    </div>
+  );
+};
+```
+
+### Custom SDK Configuration
+
+For advanced SDK configuration, you can access the SDK instance after initialization:
+
+```typescript
+import { useContext, useEffect } from 'react';
+import { ApplicationContext } from '@emd-cloud/react-components';
+
+const CustomSDKComponent = () => {
+  const { sdkInstance } = useContext(ApplicationContext);
+  
+  useEffect(() => {
+    if (sdkInstance) {
+      // SDK is ready, perform custom configuration
+      console.log('SDK initialized and ready');
+      
+      // You can access additional SDK methods here
+      // Note: Always check if methods exist before calling
+    }
+  }, [sdkInstance]);
+  
+  return <div>Custom SDK integration component</div>;
+};
+```
 
 ## Conclusion
 
