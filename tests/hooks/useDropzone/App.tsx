@@ -1,5 +1,5 @@
 import React from 'react'
-import { useDropzone } from '@lib'
+import { useDropzone } from '../../../src/hooks'
 
 interface IProps {
   multiple: boolean
