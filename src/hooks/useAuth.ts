@@ -9,7 +9,7 @@ import {
 import {
   ACTION,
   UserType,
-} from '../components/ApplicationProvider/state-manage'
+} from '../components/ApplicationProvider/state-manager'
 import type { SocialProvider } from '@emd-cloud/sdk'
 
 // ** Types

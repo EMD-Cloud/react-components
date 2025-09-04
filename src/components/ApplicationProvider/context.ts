@@ -2,7 +2,7 @@
 import { createContext } from 'react'
 
 // ** Source code Imports
-import { ApplicationActionType, ApplicationDataType } from './state-manage'
+import { ApplicationActionType, ApplicationDataType } from './state-manager'
 
 export const ApplicationContext = createContext<ApplicationDataType>({
   apiUrl: '',

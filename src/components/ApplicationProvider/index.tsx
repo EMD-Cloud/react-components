@@ -10,7 +10,7 @@ import reducer, {
   ApplicationDataType,
   ApplicationActionType,
   ACTION,
-} from './state-manage'
+} from './state-manager'
 
 interface IApplicationProviderProps {
   apiUrl?: string
