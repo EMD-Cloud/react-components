@@ -128,12 +128,14 @@ const useDropzone = ({
     [onDrop, onDroped, disabled, acceptAttr],
   )
 
+  const open = useCallback(() => !disabled && inputRef.current?.click(), [disabled])
+
   const rootProps = useMemo(() => ({
     onDragOver: handleDragOver,
     onDragLeave: handleDragLeave,
     onDrop: handleDrop,
-    onClick: () => !disabled && inputRef.current?.click(),
-  }), [handleDragOver, handleDragLeave, handleDrop, disabled])
+    onClick: open,
+  }), [handleDragOver, handleDragLeave, handleDrop, open])
 
   const inputProps = useMemo(() => ({
     ref: inputRef,
@@ -142,8 +144,6 @@ const useDropzone = ({
     type: 'file' as const,
     onChange: onInputChange,
   }), [multiple, acceptAttr, onInputChange])
-
-  const open = useCallback(() => !disabled && inputRef.current?.click(), [disabled])
 
   return {
     rootProps,
