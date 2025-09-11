@@ -13,7 +13,7 @@ import { Upload } from 'tus-js-client'
 import { v4 as uuidv4 } from 'uuid'
 
 // ** Source code Imports
-import { ApplicationContext } from '../components/ApplicationProvider/context'
+import { ApplicationContext } from 'src/components/ApplicationProvider/context'
 
 export type UploaderOptions = {
   apiUrl: string

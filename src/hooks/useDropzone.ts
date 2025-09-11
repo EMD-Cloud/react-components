@@ -9,7 +9,7 @@ import {
 } from 'react'
 
 // ** Source code Imports
-import { acceptPropAsAcceptAttr } from '../tools/uploader'
+import { acceptPropAsAcceptAttr } from 'src/tools/uploader'
 
 interface DropzoneType {
   accept?: Record<string, string[]>
@@ -128,21 +128,27 @@ const useDropzone = ({
     [onDrop, onDroped, disabled, acceptAttr],
   )
 
+  const rootProps = useMemo(() => ({
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    onDrop: handleDrop,
+    onClick: () => !disabled && inputRef.current?.click(),
+  }), [handleDragOver, handleDragLeave, handleDrop, disabled])
+
+  const inputProps = useMemo(() => ({
+    ref: inputRef,
+    multiple,
+    accept: acceptAttr,
+    type: 'file' as const,
+    onChange: onInputChange,
+  }), [multiple, acceptAttr, onInputChange])
+
+  const open = useCallback(() => !disabled && inputRef.current?.click(), [disabled])
+
   return {
-    rootProps: {
-      onDragOver: handleDragOver,
-      onDragLeave: handleDragLeave,
-      onDrop: handleDrop,
-      onClick: () => !disabled && inputRef.current?.click(),
-    },
-    inputProps: {
-      ref: inputRef,
-      multiple,
-      accept: acceptAttr,
-      type: 'file',
-      onChange: onInputChange,
-    },
-    open: () => !disabled && inputRef.current?.click(),
+    rootProps,
+    inputProps,
+    open,
     dragStatus,
   }
 }

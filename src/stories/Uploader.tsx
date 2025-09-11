@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { FileType, UploaderOptions, UploaderType } from '../hooks/useUploader'
+import { FileType, UploaderOptions, UploaderType } from 'src/hooks/useUploader'
 import { useUploader, useDropzone } from '..'
 
 interface IProps {

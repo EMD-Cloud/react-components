@@ -2,8 +2,8 @@ import { describe, it, vi, expect, beforeEach } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
 import { useContext } from 'react'
 
-import { ApplicationProvider } from '../../../src/components'
-import { ApplicationContext } from '../../../src/components/ApplicationProvider/context'
+import { ApplicationProvider } from 'src/components'
+import { ApplicationContext } from 'src/components/ApplicationProvider/context'
 import * as EMDCloudSDK from '@emd-cloud/sdk'
 
 // Get reference to mocked constructor
