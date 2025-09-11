@@ -1,8 +1,9 @@
 import { describe, it, vi, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { SocialProvider } from '@emd-cloud/sdk'
 
-import { ApplicationProvider } from '../../../src/components'
-import { useAuth } from '../../../src/hooks'
+import { ApplicationProvider } from 'src/components'
+import { useAuth } from 'src/hooks'
 import config from '../../config'
 
 // Mock the SDK
@@ -140,7 +141,7 @@ describe('useAuth Hook Tests', () => {
 
     await act(async () => {
       const response = await result.current.socialLogin({
-        provider: 'vk',
+        provider: SocialProvider.VK,
         redirectUrl: 'https://myapp.com/callback'
       })
       expect(response).toEqual(mockOAuthResponse)
@@ -229,7 +230,7 @@ describe('useAuth Hook Tests', () => {
       result.current.logOutUser()
     })
 
-    expect(mockSDK.setAuthToken).toHaveBeenCalledWith(null)
+    expect(mockSDK.setAuthToken).toHaveBeenCalledWith('')
     expect(result.current.userInfo).toBeNull()
   })
 

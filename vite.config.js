@@ -15,6 +15,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@lib': fileURLToPath(new URL('./dist', import.meta.url)),
+      // Allow absolute imports like `import { x } from "src/..."`
+      'src': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   define: { 'process.env': process.env },

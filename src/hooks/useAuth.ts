@@ -1,67 +1,56 @@
 // ** React Imports
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useCallback } from 'react'
 
 // ** Source code Imports
 import {
   ApplicationContext,
   DispatchContext,
-} from '../components/ApplicationProvider/context'
+} from 'src/components'
 import {
   ACTION,
   UserType,
-} from '../components/ApplicationProvider/state-manager'
-import type { SocialProvider } from '@emd-cloud/sdk'
+} from 'src/components/ApplicationProvider/state-manager'
+import type { EmdCloud } from '@emd-cloud/sdk'
 
 // ** Types
-export type LogInUserType = {
-  login: string
-  password: string
-}
-
-export type SignUpUserType = {
-  login: string
-  password: string
-  firstName?: string
-  lastName?: string
-  customFields?: object
-  captchaToken?: string
-}
-
-export type SocialLoginType = {
-  provider: SocialProvider
-  redirectUrl: string
-}
-
-export type ForgotPasswordType = {
-  email: string
-}
-
-export type ForgotPasswordCheckCodeType = {
-  requestId: string
-  code: string
-}
-
-export type ForgotPasswordChangeType = {
-  requestId: string
-  newPassword: string
-  newPasswordRepeat: string
-}
+// Reuse SDK method parameter types to stay in sync with @emd-cloud/sdk
+type SDKAuth = EmdCloud['auth']
+export type LogInUserType = Parameters<SDKAuth['login']>[0]
+export type SignUpUserType = Parameters<SDKAuth['registration']>[0]
+export type SocialLoginType = Parameters<SDKAuth['socialLogin']>[0]
+export type ForgotPasswordType = Parameters<SDKAuth['forgotPassword']>[0] extends string
+  ? { email: string }
+  : Parameters<SDKAuth['forgotPassword']>[0]
+export type ForgotPasswordCheckCodeType = Parameters<SDKAuth['forgotPasswordCheckCode']>[0]
+export type ForgotPasswordChangeType = Parameters<SDKAuth['forgotPasswordChange']>[0]
 
 const useAuth = () => {
   const appData = useContext(ApplicationContext)
   const dispatch = useContext(DispatchContext)
 
-  const authorization = async (token?: UserType['token']): Promise<UserType> => {
+  const sdkAuth = useMemo(() => {
     if (!appData.sdkInstance) {
+      return null
+    }
+    return {
+      auth: appData.sdkInstance.auth,
+      setAuthToken: appData.sdkInstance.setAuthToken.bind(appData.sdkInstance)
+    }
+  }, [appData.sdkInstance])
+
+  const authorization = useCallback(async (
+    token?: UserType['token']
+  ): ReturnType<SDKAuth['authorization']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
       if (token) {
-        appData.sdkInstance.setAuthToken(token)
+        sdkAuth.setAuthToken(token)
       }
       
-      const userData = await appData.sdkInstance.auth.authorization()
+      const userData = await sdkAuth.auth.authorization()
       
       dispatch({
         type: ACTION.SET_USER,
@@ -72,15 +61,17 @@ const useAuth = () => {
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth, dispatch])
 
-  const logInUser = async (params: LogInUserType): Promise<UserType> => {
-    if (!appData.sdkInstance) {
+  const logInUser = useCallback(async (
+    params: LogInUserType
+  ): ReturnType<SDKAuth['login']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
-      const userData = await appData.sdkInstance.auth.login(params)
+      const userData = await sdkAuth.auth.login(params)
       
       dispatch({
         type: ACTION.SET_USER,
@@ -91,15 +82,17 @@ const useAuth = () => {
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth, dispatch])
 
-  const signUpUser = async (params: SignUpUserType): Promise<UserType> => {
-    if (!appData.sdkInstance) {
+  const signUpUser = useCallback(async (
+    params: SignUpUserType
+  ): ReturnType<SDKAuth['registration']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
-      const userData = await appData.sdkInstance.auth.registration(params)
+      const userData = await sdkAuth.auth.registration(params)
       
       dispatch({
         type: ACTION.SET_USER,
@@ -110,31 +103,35 @@ const useAuth = () => {
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth, dispatch])
 
-  const socialLogin = async (params: SocialLoginType) => {
-    if (!appData.sdkInstance) {
+  const socialLogin = useCallback(async (
+    params: SocialLoginType
+  ): ReturnType<SDKAuth['socialLogin']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
       // Use the provider string directly - SDK will handle it internally
-      return await appData.sdkInstance.auth.socialLogin({
+      return await sdkAuth.auth.socialLogin({
         provider: params.provider,
         redirectUrl: params.redirectUrl
       })
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth])
 
-  const exchangeOAuthToken = async (secret: string): Promise<UserType> => {
-    if (!appData.sdkInstance) {
+  const exchangeOAuthToken = useCallback(async (
+    secret: Parameters<SDKAuth['exchangeOAuthToken']>[0]
+  ): ReturnType<SDKAuth['exchangeOAuthToken']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
-      const userData = await appData.sdkInstance.auth.exchangeOAuthToken(secret)
+      const userData = await sdkAuth.auth.exchangeOAuthToken(secret)
       
       dispatch({
         type: ACTION.SET_USER,
@@ -145,39 +142,45 @@ const useAuth = () => {
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth, dispatch])
 
-  const forgotPassword = async (params: ForgotPasswordType) => {
-    if (!appData.sdkInstance) {
+  const forgotPassword = useCallback(async (
+    params: ForgotPasswordType
+  ): ReturnType<SDKAuth['forgotPassword']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
-      return await appData.sdkInstance.auth.forgotPassword(params.email)
+      return await sdkAuth.auth.forgotPassword(params.email)
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth])
 
-  const forgotPasswordCheckCode = async (params: ForgotPasswordCheckCodeType) => {
-    if (!appData.sdkInstance) {
+  const forgotPasswordCheckCode = useCallback(async (
+    params: ForgotPasswordCheckCodeType
+  ): ReturnType<SDKAuth['forgotPasswordCheckCode']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
-      return await appData.sdkInstance.auth.forgotPasswordCheckCode(params)
+      return await sdkAuth.auth.forgotPasswordCheckCode(params)
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth])
 
-  const forgotPasswordChange = async (params: ForgotPasswordChangeType): Promise<UserType> => {
-    if (!appData.sdkInstance) {
+  const forgotPasswordChange = useCallback(async (
+    params: ForgotPasswordChangeType
+  ): ReturnType<SDKAuth['forgotPasswordChange']> => {
+    if (!sdkAuth) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     try {
-      const userData = await appData.sdkInstance.auth.forgotPasswordChange(params)
+      const userData = await sdkAuth.auth.forgotPasswordChange(params)
       
       dispatch({
         type: ACTION.SET_USER,
@@ -188,19 +191,20 @@ const useAuth = () => {
     } catch (error) {
       throw error
     }
-  }
+  }, [sdkAuth, dispatch])
 
-  const logOutUser = () => {
+  const logOutUser = useCallback(() => {
     dispatch({
       type: ACTION.SET_USER,
       payload: null,
     })
     
     // Clear token from SDK instance if available
-    if (appData.sdkInstance) {
-      appData.sdkInstance.setAuthToken(null)
+    if (sdkAuth) {
+      // SDK expects a string; clear by setting empty string
+      sdkAuth.setAuthToken('')
     }
-  }
+  }, [dispatch, sdkAuth])
 
   const userInfo = useMemo(() => {
     return appData.user

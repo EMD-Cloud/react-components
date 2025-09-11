@@ -8,6 +8,10 @@
 -   [Hooks](#hooks)
     -   [Authorization Hooks](#authorization-hooks)
         -   [Hook: useAuth](#hook--useauth)
+    -   [Database Hooks](#database-hooks)
+        -   [Hook: useDatabase](#hook--usedatabase)
+    -   [Webhook Hooks](#webhook-hooks)
+        -   [Hook: useWebhook](#hook--usewebhook)
     -   [Uploader Hooks](#uploader-hooks)
         -   [Hook: useUploader](#hook--useuploader)
         -   [Hook: useDropzone](#hook--usedropzone)
@@ -30,7 +34,7 @@ The EMD Cloud React components provide a set of React components for interacting
     # Install the React components
     npm install @emd-cloud/react-components
     
-    # Install the required peer dependencies
+    # Install the required peer dependencies (v1.7.1+ required for database and webhook features)
     npm install @emd-cloud/sdk
     ```
 
@@ -60,7 +64,7 @@ That's it! The EMD Cloud React components are now ready to use.
 
 This library provides full TypeScript support with exported types from the EMD Cloud SDK. You can import and use these types in your TypeScript applications:
 
-```typescript
+```tsx
 import { 
   UserData,
   AccountStatus,
@@ -91,6 +95,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onStatusChange }) => {
 
 **Available Types:**
 
+**Authentication Types:**
 - `UserData` - Complete user information interface
 - `AccountStatus` - User account status enum (`Pending`, `Approved`, `Rejected`)
 - `PingStatus` - User online status enum (`Online`, `Offline`)
@@ -99,6 +104,29 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onStatusChange }) => {
 - `ForgotPassData` - Password recovery request data
 - `ForgotPassCheckCodeData` - Password recovery code verification data
 - `OAuthUrlResponse` - OAuth URL response interface
+
+**Database Types:**
+- `Database` - Database instance interface
+- `DatabaseRowData` - Generic database row data structure
+- `DatabaseQuery` - MongoDB-style query object for filtering
+- `DatabaseSort` - Sorting configuration for database queries
+- `DatabaseListOptions` - Options for listing/querying database rows
+- `DatabaseGetRowOptions` - Options for retrieving a single row
+- `DatabaseCountOptions` - Options for counting rows
+- `DatabaseCreateOptions` - Options for creating new rows
+- `DatabaseUpdateOptions` - Options for updating existing rows
+- `DatabaseBulkUpdatePayload` - Bulk update operation payload
+- `DatabaseRowResponse` - Single row response format
+- `DatabaseRowsResponse` - Multiple rows response format
+- `DatabaseCountResponse` - Row count response format
+- `DatabaseBulkResponse` - Bulk operation response format
+- `DatabaseDeleteResponse` - Delete operation response format
+- `DatabaseTriggerResponse` - Button trigger response format
+- `DatabaseSaveMode` - Save mode enum for database operations
+
+**Common Types:**
+- `CallOptions` - API call configuration options
+- `AuthType` - Authentication type enum (`auth-token`, `api-token`)
 
 <br>
 
@@ -354,9 +382,911 @@ const PasswordRecoveryComponent = () => {
 
 <br>
 
-### Uploader Hooks:
+### Database Hooks:
 
-#### Hook:  `useUploader`
+#### Hook: `useDatabase`
+
+**Description:**
+
+The `useDatabase` hook provides comprehensive database operations for EMD Cloud collections using the EMD Cloud SDK. It offers type-safe CRUD operations, advanced querying with MongoDB-style syntax, sorting, pagination, and bulk operations. This hook automatically manages authentication and provides error handling for all database interactions.
+
+**Available Methods:**
+
+- `getRows<T>` (function): Retrieve multiple rows with filtering, sorting, and pagination
+- `countRows` (function): Count rows matching specific criteria  
+- `getRow<T>` (function): Retrieve a single row by ID
+- `createRow<T>` (function): Create a new row in the collection
+- `updateRow<T>` (function): Update an existing row by ID
+- `bulkUpdate` (function): Perform bulk updates on multiple rows
+- `deleteRow` (function): Delete a single row by ID
+- `deleteRows` (function): Delete multiple rows matching criteria
+- `triggerButton` (function): Execute button actions on database rows
+
+**Key Features:**
+
+- **Type Safety**: Full TypeScript support with generics for data types
+- **Advanced Querying**: MongoDB-style query syntax with `$and`, `$or`, `$eq`, `$ne`, etc.
+- **Sorting & Pagination**: Flexible sorting and pagination options
+- **Bulk Operations**: Efficient bulk updates and deletions
+- **Authentication**: Support for both user (`auth-token`) and server (`api-token`) authentication modes
+- **Error Handling**: Comprehensive error handling with meaningful error messages
+
+**Basic CRUD Example:**
+
+```tsx
+import { useDatabase } from '@emd-cloud/react-components';
+
+// Define your data type for type safety
+interface User {
+  _id?: string;
+  name: string;
+  email: string;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+}
+
+const UserManagement = () => {
+  const { getRows, createRow, updateRow, deleteRow } = useDatabase();
+
+  // Get all active users
+  const loadActiveUsers = async () => {
+    try {
+      const response = await getRows<User>('users', {
+        query: {
+          "$and": [
+            { "data.status": { "$eq": "active" } }
+          ]
+        },
+        limit: 50,
+        sort: [{ column: "createdAt", sort: "desc" }]
+      });
+      
+      console.log('Active users:', response.data);
+      console.log('Total count:', response.count);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    }
+  };
+
+  // Create a new user
+  const createUser = async (userData: Omit<User, '_id' | 'createdAt'>) => {
+    try {
+      const response = await createRow<User>('users', userData);
+      console.log('Created user:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      throw error;
+    }
+  };
+
+  // Update user status
+  const updateUserStatus = async (userId: string, status: User['status']) => {
+    try {
+      const response = await updateRow<User>('users', userId, { status });
+      console.log('Updated user:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+    }
+  };
+
+  // Delete a user
+  const removeUser = async (userId: string) => {
+    try {
+      await deleteRow('users', userId);
+      console.log('User deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={loadActiveUsers}>Load Active Users</button>
+      <button onClick={() => createUser({ 
+        name: 'John Doe', 
+        email: 'john@example.com', 
+        status: 'active' 
+      })}>
+        Create User
+      </button>
+    </div>
+  );
+};
+```
+
+**Advanced Querying Example:**
+
+```tsx
+import { useDatabase, DatabaseQuery } from '@emd-cloud/react-components';
+
+const AdvancedUserSearch = () => {
+  const { getRows, countRows } = useDatabase();
+
+  // Complex query with multiple conditions
+  const searchUsers = async () => {
+    const query: DatabaseQuery = {
+      "$and": [
+        {
+          "$or": [
+            { "data.name": { "$regex": "John", "$options": "i" } },
+            { "data.email": { "$regex": "@gmail.com" } }
+          ]
+        },
+        { "data.status": { "$eq": "active" } },
+        { "data.createdAt": { "$gte": "2024-01-01" } }
+      ]
+    };
+
+    try {
+      // Get matching users with pagination
+      const usersResponse = await getRows('users', {
+        query,
+        limit: 20,
+        offset: 0,
+        sort: [
+          { column: "name", sort: "asc" },
+          { column: "createdAt", sort: "desc" }
+        ]
+      });
+
+      // Count total matching users
+      const countResponse = await countRows('users', { query });
+
+      console.log('Found users:', usersResponse.data);
+      console.log('Total matching users:', countResponse.count);
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+  };
+
+  // Search by date range
+  const getUsersByDateRange = async (startDate: string, endDate: string) => {
+    try {
+      const response = await getRows('users', {
+        query: {
+          "data.createdAt": {
+            "$gte": startDate,
+            "$lte": endDate
+          }
+        },
+        sort: [{ column: "createdAt", sort: "desc" }]
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Date range search failed:', error);
+      return [];
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={searchUsers}>Advanced Search</button>
+      <button onClick={() => getUsersByDateRange('2024-01-01', '2024-12-31')}>
+        Users This Year
+      </button>
+    </div>
+  );
+};
+```
+
+**Bulk Operations Example:**
+
+```tsx
+import { useDatabase } from '@emd-cloud/react-components';
+
+const BulkUserOperations = () => {
+  const { bulkUpdate, deleteRows, getRows } = useDatabase();
+
+  // Bulk update user statuses
+  const activateAllPendingUsers = async () => {
+    try {
+      const response = await bulkUpdate('users', {
+        query: {
+          "data.status": { "$eq": "pending" }
+        },
+        update: {
+          "$set": { "data.status": "active" }
+        }
+      });
+
+      console.log('Bulk update result:', response);
+      console.log(`Updated ${response.modifiedCount} users`);
+    } catch (error) {
+      console.error('Bulk update failed:', error);
+    }
+  };
+
+  // Delete inactive users older than 6 months
+  const cleanupInactiveUsers = async () => {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    try {
+      const response = await deleteRows('users', {
+        query: {
+          "$and": [
+            { "data.status": { "$eq": "inactive" } },
+            { "data.lastLoginAt": { "$lt": sixMonthsAgo.toISOString() } }
+          ]
+        }
+      });
+
+      console.log(`Deleted ${response.deletedCount} inactive users`);
+    } catch (error) {
+      console.error('Cleanup failed:', error);
+    }
+  };
+
+  // Get users with specific IDs
+  const getUsersByIds = async (userIds: string[]) => {
+    try {
+      const response = await getRows('users', {
+        query: {
+          "_id": { "$in": userIds }
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get users by IDs:', error);
+      return [];
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={activateAllPendingUsers}>Activate Pending Users</button>
+      <button onClick={cleanupInactiveUsers}>Cleanup Inactive Users</button>
+    </div>
+  );
+};
+```
+
+**Authentication Modes Example:**
+
+```tsx
+import { useDatabase } from '@emd-cloud/react-components';
+
+const ServerOperations = () => {
+  const { getRows, createRow } = useDatabase();
+
+  // Use server authentication for admin operations
+  const getAdminData = async () => {
+    try {
+      const response = await getRows('admin_logs', {
+        query: { "data.level": { "$eq": "error" } },
+        limit: 100
+      }, {
+        authType: 'api-token' // Use server authentication
+      });
+
+      console.log('Admin logs:', response.data);
+    } catch (error) {
+      console.error('Admin operation failed:', error);
+    }
+  };
+
+  // User-level operation (default auth-token)
+  const getUserProfile = async (userId: string) => {
+    try {
+      const response = await getRows('user_profiles', {
+        query: { "_id": { "$eq": userId } }
+      }); // Uses default auth-token authentication
+
+      return response.data[0];
+    } catch (error) {
+      console.error('Profile fetch failed:', error);
+      return null;
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={getAdminData}>Get Admin Data</button>
+      <button onClick={() => getUserProfile('user-123')}>Get User Profile</button>
+    </div>
+  );
+};
+```
+
+**Button Trigger Example:**
+
+```tsx
+import { useDatabase } from '@emd-cloud/react-components';
+
+const WorkflowActions = () => {
+  const { triggerButton } = useDatabase();
+
+  // Trigger a workflow button on a specific row
+  const approveApplication = async (applicationId: string) => {
+    try {
+      const response = await triggerButton(
+        'applications',     // Collection name
+        applicationId,      // Row ID
+        'approve_button'    // Button identifier
+      );
+
+      console.log('Application approved:', response);
+    } catch (error) {
+      console.error('Approval failed:', error);
+    }
+  };
+
+  // Trigger with custom authentication
+  const triggerAdminAction = async (recordId: string) => {
+    try {
+      const response = await triggerButton(
+        'admin_records',
+        recordId,
+        'admin_action_button',
+        { authType: 'api-token' }
+      );
+
+      console.log('Admin action completed:', response);
+    } catch (error) {
+      console.error('Admin action failed:', error);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => approveApplication('app-123')}>
+        Approve Application
+      </button>
+      <button onClick={() => triggerAdminAction('record-456')}>
+        Trigger Admin Action
+      </button>
+    </div>
+  );
+};
+```
+
+<br>
+
+### Webhook Hooks:
+
+#### Hook: `useWebhook`
+
+**Description:**
+
+The `useWebhook` hook provides easy integration with EMD Cloud webhook endpoints using the EMD Cloud SDK. It offers convenient methods for calling webhooks with different HTTP methods and payload formats, supporting both user and server authentication modes. This hook simplifies webhook integration for notifications, external process triggers, data fetching, and third-party service integrations.
+
+**Available Methods:**
+
+- `callWebhook` (function): Make webhook calls with full control over HTTP method, headers, and body
+
+**Key Features:**
+
+- **Custom Requests**: Full control over HTTP method, headers, and request body
+- **Simple JSON Sending**: Easy POST requests with JSON payloads
+- **GET Requests**: Fetch data from webhook endpoints
+- **Authentication**: Support for both `auth-token` (user) and `api-token` (server) authentication modes
+- **Error Handling**: Comprehensive error handling and response validation
+- **Type Safety**: Full TypeScript support for webhook responses
+
+**Basic Usage Example:**
+
+```tsx
+import { useWebhook } from '@emd-cloud/react-components';
+
+const NotificationComponent = () => {
+  const { callWebhook } = useWebhook();
+
+  // Send a simple notification
+  const sendUserLoginNotification = async (userId: string) => {
+    try {
+      const result = await callWebhook('user-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          timestamp: new Date().toISOString(),
+          source: 'web-app',
+          userAgent: navigator.userAgent
+        })
+      });
+
+      console.log('Notification sent:', result);
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+    }
+  };
+
+  // Get webhook status or configuration
+  const checkWebhookStatus = async () => {
+    try {
+      const status = await callWebhook('health-check', { method: 'GET' });
+      console.log('Webhook status:', status);
+      return status;
+    } catch (error) {
+      console.error('Failed to check webhook status:', error);
+      return null;
+    }
+  };
+
+  // Custom webhook call with specific requirements
+  const triggerProcessing = async (data: any) => {
+    try {
+      const result = await callWebhook('data-processor', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Processing-Priority': 'high',
+          'X-Request-ID': crypto.randomUUID()
+        },
+        body: JSON.stringify({
+          action: 'process',
+          data,
+          timestamp: Date.now()
+        })
+      });
+
+      console.log('Processing triggered:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to trigger processing:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => sendUserLoginNotification('user-123')}>
+        Send Login Notification
+      </button>
+      <button onClick={checkWebhookStatus}>
+        Check Webhook Status
+      </button>
+      <button onClick={() => triggerProcessing({ type: 'user-data', id: 'user-123' })}>
+        Trigger Data Processing
+      </button>
+    </div>
+  );
+};
+```
+
+**Event Notifications Example:**
+
+```tsx
+import { useWebhook } from '@emd-cloud/react-components';
+
+const EventSystem = () => {
+  const { callWebhook } = useWebhook();
+
+  // User activity tracking
+  const trackUserActivity = async (activity: {
+    userId: string;
+    action: string;
+    page: string;
+    data?: any;
+  }) => {
+    try {
+      await callWebhook('user-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...activity,
+          timestamp: new Date().toISOString(),
+          sessionId: sessionStorage.getItem('sessionId'),
+          userAgent: navigator.userAgent
+        })
+      });
+    } catch (error) {
+      console.error('Failed to track activity:', error);
+    }
+  };
+
+  // Order processing notifications
+  const notifyOrderEvent = async (
+    event: 'created' | 'updated' | 'completed' | 'cancelled',
+    orderData: any
+  ) => {
+    try {
+      await callWebhook(`order-${event}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event,
+          order: orderData,
+          timestamp: new Date().toISOString(),
+          source: 'ecommerce-app'
+        })
+      });
+
+      console.log(`Order ${event} notification sent`);
+    } catch (error) {
+      console.error(`Failed to send order ${event} notification:`, error);
+    }
+  };
+
+  // Error reporting
+  const reportError = async (error: Error, context: any) => {
+    try {
+      await callWebhook('error-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          },
+          context,
+          timestamp: new Date().toISOString(),
+          url: window.location.href,
+          userAgent: navigator.userAgent
+        })
+      });
+    } catch (webhookError) {
+      console.error('Failed to report error via webhook:', webhookError);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => trackUserActivity({
+        userId: 'user-123',
+        action: 'page_view',
+        page: '/dashboard'
+      })}>
+        Track Page View
+      </button>
+      <button onClick={() => notifyOrderEvent('created', { 
+        id: 'order-456', 
+        total: 99.99,
+        items: ['item1', 'item2']
+      })}>
+        Notify Order Created
+      </button>
+    </div>
+  );
+};
+```
+
+**Third-Party Integration Example:**
+
+```tsx
+import { useWebhook } from '@emd-cloud/react-components';
+
+const ThirdPartyIntegrations = () => {
+  const { callWebhook } = useWebhook();
+
+  // Slack notification integration
+  const sendSlackNotification = async (message: string, channel: string) => {
+    try {
+      const result = await callWebhook('slack-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          channel,
+          text: message,
+          username: 'EMD Cloud Bot',
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      console.log('Slack notification sent:', result);
+    } catch (error) {
+      console.error('Failed to send Slack notification:', error);
+    }
+  };
+
+  // Email service integration
+  const sendEmail = async (to: string, subject: string, body: string) => {
+    try {
+      const result = await callWebhook('email-service', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Email-Priority': 'normal'
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          body,
+          from: 'noreply@myapp.com',
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      console.log('Email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      throw error;
+    }
+  };
+
+  // External API data sync
+  const syncWithCRM = async (customerData: any) => {
+    try {
+      const result = await callWebhook('crm-sync', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Source': 'web-app'
+        },
+        body: JSON.stringify({
+          action: 'update_customer',
+          data: customerData,
+          syncTimestamp: new Date().toISOString()
+        })
+      });
+
+      console.log('CRM sync completed:', result);
+      return result;
+    } catch (error) {
+      console.error('CRM sync failed:', error);
+      throw error;
+    }
+  };
+
+  // Get integration status
+  const checkIntegrationHealth = async () => {
+    try {
+      const [slackStatus, emailStatus, crmStatus] = await Promise.all([
+        call('slack-health', { method: 'GET' }),
+        call('email-health', { method: 'GET' }),
+        call('crm-health', { method: 'GET' })
+      ]);
+
+      return {
+        slack: slackStatus,
+        email: emailStatus,
+        crm: crmStatus
+      };
+    } catch (error) {
+      console.error('Failed to check integration health:', error);
+      return null;
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => sendSlackNotification('Hello from EMD Cloud!', '#general')}>
+        Send Slack Message
+      </button>
+      <button onClick={() => sendEmail(
+        'user@example.com',
+        'Welcome to Our Service',
+        'Thank you for signing up!'
+      )}>
+        Send Welcome Email
+      </button>
+      <button onClick={() => syncWithCRM({
+        id: 'customer-123',
+        name: 'John Doe',
+        email: 'john@example.com'
+      })}>
+        Sync with CRM
+      </button>
+      <button onClick={checkIntegrationHealth}>
+        Check Integration Health
+      </button>
+    </div>
+  );
+};
+```
+
+**Server Authentication Example:**
+
+```tsx
+import { useWebhook } from '@emd-cloud/react-components';
+
+const AdminWebhookOperations = () => {
+  const { callWebhook } = useWebhook();
+
+  // Server-level operations requiring API token
+  const triggerSystemMaintenance = async () => {
+    try {
+      const result = await callWebhook('system-maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Maintenance-Type': 'scheduled'
+        },
+        body: JSON.stringify({
+          action: 'start_maintenance',
+          duration: '30m',
+          timestamp: new Date().toISOString()
+        })
+      }, {
+        authType: 'api-token' // Use server authentication
+      });
+
+      console.log('Maintenance triggered:', result);
+    } catch (error) {
+      console.error('Failed to trigger maintenance:', error);
+    }
+  };
+
+  // Send admin notifications
+  const sendAdminAlert = async (alertType: string, message: string) => {
+    try {
+      await callWebhook('admin-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: alertType,
+          message,
+          severity: 'high',
+          timestamp: new Date().toISOString(),
+          source: 'admin-panel'
+        })
+      }, {
+        authType: 'api-token'
+      });
+
+      console.log('Admin alert sent');
+    } catch (error) {
+      console.error('Failed to send admin alert:', error);
+    }
+  };
+
+  // User-level webhook (default auth-token)
+  const sendUserFeedback = async (feedback: string) => {
+    try {
+      await callWebhook('user-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback,
+          timestamp: new Date().toISOString(),
+          page: window.location.pathname
+        })
+      }); // Uses default auth-token
+
+      console.log('Feedback submitted');
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={triggerSystemMaintenance}>
+        Trigger System Maintenance
+      </button>
+      <button onClick={() => sendAdminAlert('system_overload', 'CPU usage is above 90%')}>
+        Send Admin Alert
+      </button>
+      <button onClick={() => sendUserFeedback('Great app!')}>
+        Send User Feedback
+      </button>
+    </div>
+  );
+};
+```
+
+**Error Handling and Response Validation:**
+
+```tsx
+import { useWebhook } from '@emd-cloud/react-components';
+
+const RobustWebhookComponent = () => {
+  const { callWebhook } = useWebhook();
+
+  // Webhook with retry logic
+  const sendWithRetry = async (webhookId: string, data: any, maxRetries = 3) => {
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await callWebhook(webhookId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...data,
+            attempt,
+            timestamp: new Date().toISOString()
+          })
+        });
+
+        console.log(`Webhook succeeded on attempt ${attempt}:`, result);
+        return result;
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`Webhook attempt ${attempt} failed:`, error);
+
+        if (attempt < maxRetries) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+
+    throw new Error(`Webhook failed after ${maxRetries} attempts: ${lastError.message}`);
+  };
+
+  // Validate webhook response
+  const callWebhookWithValidation = async (webhookId: string, options: RequestInit) => {
+    try {
+      const result = await callWebhook(webhookId, options);
+
+      // Custom validation logic
+      if (result && typeof result === 'object' && 'status' in result) {
+        if (result.status === 'error') {
+          throw new Error(`Webhook returned error: ${result.message || 'Unknown error'}`);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Webhook validation failed:', error);
+      
+      // Log error details for debugging
+      console.error('Webhook details:', {
+        webhookId,
+        method: options.method || 'GET',
+        headers: options.headers,
+        timestamp: new Date().toISOString()
+      });
+
+      throw error;
+    }
+  };
+
+  // Bulk webhook operations with error collection
+  const sendBulkNotifications = async (notifications: Array<{id: string, data: any}>) => {
+    const results = [];
+    const errors = [];
+
+    for (const notification of notifications) {
+      try {
+        const result = await callWebhook(notification.id, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(notification.data)
+        });
+        results.push({ id: notification.id, success: true, result });
+      } catch (error) {
+        errors.push({ id: notification.id, error: error.message });
+      }
+    }
+
+    console.log(`Bulk notifications: ${results.length} succeeded, ${errors.length} failed`);
+    
+    if (errors.length > 0) {
+      console.warn('Failed notifications:', errors);
+    }
+
+    return { results, errors };
+  };
+
+  return (
+    <div>
+      <button onClick={() => sendWithRetry('unreliable-webhook', { test: 'data' })}>
+        Send with Retry Logic
+      </button>
+      <button onClick={() => callWebhookWithValidation('validation-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ validate: true })
+      })}>
+        Call with Validation
+      </button>
+      <button onClick={() => sendBulkNotifications([
+        { id: 'notification-1', data: { message: 'Hello 1' } },
+        { id: 'notification-2', data: { message: 'Hello 2' } },
+        { id: 'notification-3', data: { message: 'Hello 3' } }
+      ])}>
+        Send Bulk Notifications
+      </button>
+    </div>
+  );
+};
+```
+
+<br>
+
+### Uploader Hooks:
 
 **Description:**
 
@@ -495,7 +1425,7 @@ In this example, the  `useDropzone`  hook is used to create a dropzone, and the 
 
 For advanced use cases, you can directly access the application context and SDK instance:
 
-```typescript
+```tsx
 import { useContext } from 'react';
 import { ApplicationContext, DispatchContext } from '@emd-cloud/react-components';
 
@@ -529,16 +1459,232 @@ const AdvancedComponent = () => {
 };
 ```
 
+### Combined Database and Webhook Integration
+
+Use both hooks together for powerful data-driven applications with real-time notifications:
+
+```tsx
+import { useDatabase, useWebhook, DatabaseRowData } from '@emd-cloud/react-components';
+
+interface Order extends DatabaseRowData {
+  customerId: string;
+  items: Array<{ id: string; quantity: number; price: number }>;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  total: number;
+  createdAt: string;
+}
+
+const OrderManagementSystem = () => {
+  const { createRow, updateRow, getRows, triggerButton } = useDatabase();
+  const { callWebhook } = useWebhook();
+
+  // Create order with webhook notification
+  const createOrder = async (orderData: Omit<Order, '_id' | 'createdAt'>) => {
+    try {
+      // Create order in database
+      const newOrder = await createRow<Order>('orders', {
+        ...orderData,
+        createdAt: new Date().toISOString()
+      });
+
+      // Send webhook notification
+      await callWebhook('order-created', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: newOrder.data._id,
+          customerId: orderData.customerId,
+          total: orderData.total,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      console.log('Order created and notification sent:', newOrder.data);
+      return newOrder.data;
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      throw error;
+    }
+  };
+
+  // Update order status with notifications
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+    try {
+      // Update order in database
+      const updatedOrder = await updateRow<Order>('orders', orderId, { status });
+
+      // Send status-specific webhook notifications
+      switch (status) {
+        case 'processing':
+          await callWebhook('order-processing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              timestamp: new Date().toISOString()
+            })
+          });
+          break;
+        case 'shipped':
+          await callWebhook('order-shipped', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              trackingInfo: updatedOrder.data.trackingNumber,
+              timestamp: new Date().toISOString()
+            })
+          });
+          break;
+        case 'delivered':
+          await callWebhook('order-delivered', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              timestamp: new Date().toISOString()
+            })
+          });
+          break;
+      }
+
+      console.log(`Order ${orderId} updated to ${status}`);
+      return updatedOrder.data;
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      throw error;
+    }
+  };
+
+  // Get orders with filtering and send analytics webhook
+  const getOrderAnalytics = async (dateRange: { start: string; end: string }) => {
+    try {
+      // Get orders from database
+      const ordersResponse = await getRows<Order>('orders', {
+        query: {
+          "data.createdAt": {
+            "$gte": dateRange.start,
+            "$lte": dateRange.end
+          }
+        }
+      });
+
+      // Calculate analytics
+      const analytics = {
+        totalOrders: ordersResponse.count,
+        totalRevenue: ordersResponse.data.reduce((sum, order) => sum + order.total, 0),
+        averageOrderValue: ordersResponse.data.length > 0 
+          ? ordersResponse.data.reduce((sum, order) => sum + order.total, 0) / ordersResponse.data.length 
+          : 0,
+        statusBreakdown: ordersResponse.data.reduce((acc, order) => {
+          acc[order.status] = (acc[order.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+
+      // Send analytics to webhook for external processing
+      await callWebhook('order-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analytics,
+          dateRange,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      return analytics;
+    } catch (error) {
+      console.error('Failed to get order analytics:', error);
+      throw error;
+    }
+  };
+
+  // Process refund with database update and notifications
+  const processRefund = async (orderId: string) => {
+    try {
+      // Trigger refund button in database
+      const refundResult = await triggerButton('orders', orderId, 'process_refund');
+
+      // Send refund notification
+      await callWebhook('order-refunded', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          refundAmount: refundResult.refundAmount,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      console.log('Refund processed:', refundResult);
+      return refundResult;
+    } catch (error) {
+      console.error('Failed to process refund:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <div>
+      <h3>Order Management System</h3>
+      <button onClick={() => createOrder({
+        customerId: 'customer-123',
+        items: [{ id: 'item-1', quantity: 2, price: 29.99 }],
+        status: 'pending',
+        total: 59.98
+      })}>
+        Create Order
+      </button>
+      <button onClick={() => updateOrderStatus('order-456', 'shipped')}>
+        Mark as Shipped
+      </button>
+      <button onClick={() => getOrderAnalytics({
+        start: '2024-01-01',
+        end: '2024-12-31'
+      })}>
+        Get Year Analytics
+      </button>
+      <button onClick={() => processRefund('order-789')}>
+        Process Refund
+      </button>
+    </div>
+  );
+};
+```
+
 ### Working with SDK Types
 
-Use the exported types for better type safety:
+Use the exported types for better type safety across all hooks:
 
-```typescript
-import { UserData, SocialProvider, useAuth } from '@emd-cloud/react-components';
+```tsx
+import { 
+  UserData, 
+  SocialProvider, 
+  DatabaseQuery,
+  DatabaseSort,
+  CallOptions,
+  useAuth,
+  useDatabase,
+  useWebhook 
+} from '@emd-cloud/react-components';
 
-const TypeSafeAuthComponent = () => {
-  const { socialLogin, userInfo } = useAuth();
+interface UserProfile extends DatabaseRowData {
+  userId: string;
+  preferences: {
+    notifications: boolean;
+    theme: 'light' | 'dark';
+    language: string;
+  };
+  lastLoginAt: string;
+}
+
+const TypeSafeComponent = () => {
+  const { userInfo, socialLogin } = useAuth();
+  const { getRows, createRow, updateRow } = useDatabase();
+  const { callWebhook } = useWebhook();
   
+  // Type-safe social login
   const handleSocialLogin = async (provider: SocialProvider) => {
     try {
       const response = await socialLogin({
@@ -548,6 +1694,34 @@ const TypeSafeAuthComponent = () => {
       window.location.href = response.url;
     } catch (error) {
       console.error('Social login failed:', error);
+    }
+  };
+
+  // Type-safe database operations
+  const getUserProfiles = async (filters: DatabaseQuery, sorting: DatabaseSort[]) => {
+    try {
+      const response = await getRows<UserProfile>('user_profiles', {
+        query: filters,
+        sort: sorting,
+        limit: 50
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get user profiles:', error);
+      return [];
+    }
+  };
+
+  // Type-safe webhook with authentication options
+  const notifyUserActivity = async (activity: any, authOptions: CallOptions) => {
+    try {
+      await callWebhook('user-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activity)
+      }, authOptions);
+    } catch (error) {
+      console.error('Failed to send activity notification:', error);
     }
   };
   
@@ -572,6 +1746,18 @@ const TypeSafeAuthComponent = () => {
       <button onClick={() => handleSocialLogin(SocialProvider.YANDEX)}>
         Login with Yandex
       </button>
+      <button onClick={() => getUserProfiles(
+        { "data.preferences.notifications": { "$eq": true } },
+        [{ column: "lastLoginAt", sort: "desc" }]
+      )}>
+        Get Active Users
+      </button>
+      <button onClick={() => notifyUserActivity(
+        { action: 'profile_view', timestamp: new Date().toISOString() },
+        { authType: 'auth-token' }
+      )}>
+        Track Activity
+      </button>
     </div>
   );
 };
@@ -581,7 +1767,7 @@ const TypeSafeAuthComponent = () => {
 
 For advanced SDK configuration, you can access the SDK instance after initialization:
 
-```typescript
+```tsx
 import { useContext, useEffect } from 'react';
 import { ApplicationContext } from '@emd-cloud/react-components';
 

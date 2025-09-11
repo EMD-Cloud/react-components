@@ -1,5 +1,5 @@
 // Import types from SDK instead of duplicating
-import type { UserData } from '@emd-cloud/sdk'
+import type { EmdCloud, UserData } from '@emd-cloud/sdk'
 
 export type UserType = UserData
 
@@ -8,7 +8,7 @@ export interface ApplicationDataType {
   tokenType?: string
   user?: UserType | null
   apiUrl?: string
-  sdkInstance?: any | null
+  sdkInstance?: EmdCloud | null
 }
 
 export enum ACTION {
