@@ -47,9 +47,9 @@ const ApplicationProvider = ({
         environment: AppEnvironment.Client,
         appId: app,
         apiUrl,
-        ...(authToken && { apiToken: authToken })
+        ...(authToken && { apiToken: authToken }),
       })
-      
+
       dispatch({
         type: ACTION.SET_SDK_INSTANCE,
         payload: sdkInstance,
@@ -59,6 +59,8 @@ const ApplicationProvider = ({
       console.warn('@emd-cloud/sdk initialization failed:', error)
     }
   }, [app, apiUrl, authToken])
+
+  if (!value.sdkInstance) return null
 
   return (
     <ApplicationContext.Provider value={value}>
