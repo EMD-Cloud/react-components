@@ -118,7 +118,9 @@ const useUploader = ({
             filename: file.name,
             filetype: file.type,
             read_permission: readPermission,
-            ...(permittedUsers && { permitted_users: permittedUsers.join(';') }),
+            ...(permittedUsers && {
+              permitted_users: permittedUsers.join(';'),
+            }),
             presigned_url_ttl: presignedUrlTTL.toString(),
           },
           onError: (error) => {
@@ -211,7 +213,7 @@ const useUploader = ({
 
       setObservedFiles(data)
     },
-    [onBeforeUpload],
+    [onBeforeUpload, appData],
   )
 
   return { uploadFiles, isProccess }
