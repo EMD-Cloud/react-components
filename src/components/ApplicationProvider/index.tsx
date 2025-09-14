@@ -38,6 +38,7 @@ const ApplicationProvider = ({
     tokenType,
     user: null,
     sdkInstance: null,
+    authInited: false,
   })
 
   // Initialize SDK instance when component mounts or when dependencies change

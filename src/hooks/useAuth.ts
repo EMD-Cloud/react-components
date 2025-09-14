@@ -88,6 +88,11 @@ const useAuth = () => {
         return userData
       } catch (error) {
         throw error
+      } finally {
+        dispatch({
+          type: ACTION.AUTH_INITED,
+          payload: true,
+        })
       }
     },
     [sdkAuth, dispatch],
@@ -107,6 +112,11 @@ const useAuth = () => {
         dispatch({
           type: ACTION.SET_USER,
           payload: userData,
+        })
+
+        dispatch({
+          type: ACTION.AUTH_INITED,
+          payload: true,
         })
 
         return userData
@@ -154,6 +164,11 @@ const useAuth = () => {
         dispatch({
           type: ACTION.SET_USER,
           payload: userData,
+        })
+
+        dispatch({
+          type: ACTION.AUTH_INITED,
+          payload: true,
         })
 
         return userData
@@ -234,6 +249,11 @@ const useAuth = () => {
       payload: null,
     })
 
+    dispatch({
+      type: ACTION.AUTH_INITED,
+      payload: false,
+    })
+
     // Clear token from SDK instance if available
     if (sdkAuth) {
       // SDK expects a string; clear by setting empty string
@@ -271,6 +291,9 @@ const useAuth = () => {
     return appData.user
   }, [appData.user])
 
+  const authInited = useMemo(() => {
+    return appData.authInited
+  }, [appData.authInited])
   return {
     authorization,
     logInUser,
@@ -283,6 +306,7 @@ const useAuth = () => {
     forgotPasswordChange,
     updateUser,
     userInfo,
+    authInited,
   }
 }
 

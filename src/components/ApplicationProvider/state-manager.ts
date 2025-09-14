@@ -9,12 +9,14 @@ export interface ApplicationDataType {
   user?: UserType | null
   apiUrl?: string
   sdkInstance?: EmdCloud | null
+  authInited?: false
 }
 
 export enum ACTION {
   SET_USER = 1,
   SET_APP = 2,
   SET_SDK_INSTANCE = 3,
+  AUTH_INITED = 4,
 }
 
 export interface ApplicationActionType {
@@ -32,6 +34,10 @@ const reducer = (
 
   if (type === ACTION.SET_SDK_INSTANCE) {
     return { ...state, sdkInstance: payload }
+  }
+
+  if (type === ACTION.AUTH_INITED) {
+    return { ...state, authInited: payload }
   }
 
   throw Error('Unknown action.')
