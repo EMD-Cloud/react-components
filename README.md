@@ -214,6 +214,7 @@ This hook manages user authentication processes through the EMD Cloud platform u
 -   `forgotPassword` (function): Initiate password recovery process.
 -   `forgotPasswordCheckCode` (function): Verify password reset code.
 -   `forgotPasswordChange` (function): Complete password reset.
+-   `updateUser` (function): Update current or specified user’s profile information. 
 -   `logOutUser` (function): Log out the current user.
 
 **Return Value:** Returns an object with:
@@ -227,6 +228,7 @@ This hook manages user authentication processes through the EMD Cloud platform u
 -   `forgotPassword` (function): For initiating password recovery.
 -   `forgotPasswordCheckCode` (function): For verifying reset codes.
 -   `forgotPasswordChange` (function): For completing password reset.
+-   `updateUser` (function): Update current or specified user’s profile information. 
 -   `logOutUser` (function): For logout.
 
 **Basic Authentication Example:**
