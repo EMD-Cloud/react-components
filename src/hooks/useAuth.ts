@@ -61,6 +61,11 @@ const useAuth = () => {
           payload: userData,
         })
 
+        dispatch({
+          type: ACTION.AUTH_INITED,
+          payload: true,
+        })
+
         return userData
       } catch (error) {
         throw error
@@ -83,6 +88,11 @@ const useAuth = () => {
         dispatch({
           type: ACTION.SET_USER,
           payload: userData,
+        })
+
+        dispatch({
+          type: ACTION.AUTH_INITED,
+          payload: true,
         })
 
         return userData
@@ -294,6 +304,7 @@ const useAuth = () => {
   const authInited = useMemo(() => {
     return appData.authInited
   }, [appData.authInited])
+
   return {
     authorization,
     logInUser,
