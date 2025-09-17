@@ -74,7 +74,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@chromatic-com/storybook": "^4.1.1",
-    "@emd-cloud/sdk": "^1.8.1",
+    "@emd-cloud/sdk": "^1.8.2",
     "@eslint/js": "^9.12.0",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-node-resolve": "^16.0.1",
