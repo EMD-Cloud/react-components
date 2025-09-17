@@ -52,23 +52,25 @@ const useAuth = () => {
       try {
         if (token) {
           sdkAuth.setAuthToken(token)
+
+          const userData = await sdkAuth.auth.authorization()
+
+          dispatch({
+            type: ACTION.SET_USER,
+            payload: userData,
+          })
+
+          return userData
         }
 
-        const userData = await sdkAuth.auth.authorization()
-
-        dispatch({
-          type: ACTION.SET_USER,
-          payload: userData,
-        })
-
+        return null
+      } catch (error) {
+        throw error
+      } finally {
         dispatch({
           type: ACTION.AUTH_INITED,
           payload: true,
         })
-
-        return userData
-      } catch (error) {
-        throw error
       }
     },
     [sdkAuth, dispatch],
