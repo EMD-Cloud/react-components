@@ -1290,59 +1290,267 @@ const RobustWebhookComponent = () => {
 
 ### Uploader Hooks:
 
+#### Hook: `useUploader`
+
 **Description:**
 
-This hook manages file uploads to the server using the  `tus-js-client`  library. It provides the ability to track the upload status and progress of files.
+This hook provides file upload functionality to EMD Cloud storage using the SDK's TUS (resumable upload) protocol implementation. It manages multiple concurrent file uploads with progress tracking, automatic retries, and flexible permission settings. The hook integrates seamlessly with the ApplicationProvider and handles all aspects of the upload lifecycle including progress updates, error handling, and upload cancellation.
+
+**Key Features:**
+
+- **Resumable Uploads**: Uses TUS protocol for reliable uploads that can survive connection interruptions
+- **Multiple File Support**: Upload multiple files simultaneously with independent progress tracking
+- **Progress Tracking**: Real-time progress updates with bytes uploaded, total bytes, and percentage
+- **Flexible Permissions**: Support for public, authenticated users, staff only, or specific user access
+- **Chunked Upload**: Large file support with configurable chunk size (default: 5MB)
+- **Automatic Retry**: Configurable retry delays for failed upload chunks
+- **Upload Control**: Ability to cancel/abort individual file uploads
+- **Request Interception**: onBeforeRequest callback for request customization
+- **Type Safety**: Full TypeScript support with SDK types
 
 **Parameters:**
 
--   `options`: Uploader options containing:
-    -   `apiUrl`  (string): API URL for file uploads.
-    -   `app`  (string): application name.
--   `integration`  (string, optional): integration identifier for uploads.
--   `headers`  (object, optional): headers to be sent with the request.
--   `readPermission` (enum): option for setting read permission to file link (can be `public` for all users, `onlyAuthUser` for all authenticated users, `onlyAppStaff` for user who uploaded file and administrators, `onlyPermittedUsers` for specific users specified in the `permittedUsers` parameter, default `onlyAppStaff`)
--   `permittedUsers` (string array): the list of users who will have access to the files is specified for `readPermission` equal to `onlyPermittedUsers`
--   `presignedUrlTTL` (number): option for setting lifetime of generated file link after redirect from general link (default `60`)
--   `retryDelays`  (array, optional): an array of delays for retry attempts in milliseconds. Default is  `[0, 3000, 5000, 10000, 20000]`.
--   `onBeforeUpload`  (function): callback function called before the upload starts. It should return  `true`  if the upload should continue, or  `false`  if the upload should be canceled. Defaults to  `true`.
--   `onUpdate`  (function): callback function called when the status of file uploads is updated. Takes an array of files with updated upload status information.
+**Note**: The hook automatically uses `apiUrl` and `app` configuration from the `ApplicationProvider` context. Make sure your application is wrapped with `ApplicationProvider` before using this hook.
 
-**Return Value:**  Returns an object with two properties:
+-   `integration` (string, optional): S3 integration identifier. Default: `'default'`
+-   `chunkSize` (number, optional): Size of each upload chunk in bytes. Default: `5242880` (5MB)
+-   `headers` (object, optional): Additional HTTP headers to include in upload requests
+-   `readPermission` (ReadPermission, optional): File access permission level. Options:
+    -   `ReadPermission.Public` - File accessible to everyone
+    -   `ReadPermission.OnlyAuthUser` - File accessible to all authenticated users
+    -   `ReadPermission.OnlyAppStaff` - File accessible to uploader and app staff (default)
+    -   `ReadPermission.OnlyPermittedUsers` - File accessible only to users in `permittedUsers` array
+-   `permittedUsers` (string[], optional): Array of user IDs who can access the file (required when `readPermission` is `OnlyPermittedUsers`)
+-   `presignedUrlTTL` (number, optional): Lifetime of generated presigned URLs in minutes. Default: `60`
+-   `retryDelays` (number[], optional): Array of delay intervals in milliseconds for retry attempts. Default: `[0, 3000, 5000, 10000, 20000]`
+-   `onBeforeUpload` (function, optional): Callback invoked before upload starts. Return `false` to cancel upload. Default: `() => true`
+-   `onBeforeRequest` (function, optional): Callback invoked before each HTTP request during upload (for request interception/modification)
+-   `onUpdate` (function, required): Callback invoked when file upload statuses change. Receives array of file objects with current status
 
--   `uploadFiles`  (function): function to upload files. Takes an array of files to upload.
--   `isProccess`  (boolean): flag indicating if there are active uploads in progress.
+**Return Value:** Returns an object with two properties:
 
-**Example:**
-```javascript
-import { useUploader } from '@emd-cloud/react-components';
+-   `uploadFiles` (function): Function to initiate file uploads. Accepts an array of File objects
+-   `isProccess` (boolean): Boolean flag indicating if any uploads are currently in progress
 
-const MyUploaderComponent = () => {
+**File Object Structure:**
+
+Each file in the `onUpdate` callback has the following structure:
+
+```typescript
+{
+  id: string;              // Unique upload ID
+  fileName: string;        // Name of the file
+  status: 'started' | 'progress' | 'success' | 'failed';
+  progress?: string;       // Upload progress percentage (e.g., "45.32")
+  bytesUploaded?: number;  // Number of bytes uploaded
+  bytesTotal?: number;     // Total file size in bytes
+  fileUrl?: string;        // URL to access the file (available after success)
+  error?: Error;           // Error object (if upload failed)
+  methods?: {
+    stop: () => void;      // Function to cancel/abort the upload
+  };
+}
+```
+
+**Basic Example:**
+
+```tsx
+import { useUploader, ReadPermission } from '@emd-cloud/react-components';
+import { useState } from 'react';
+
+const FileUploadComponent = () => {
+  const [files, setFiles] = useState([]);
+
   const { uploadFiles, isProccess } = useUploader({
-    options: {
-      apiUrl: 'https://example.com',
-      app: 'myApp',
-    },
-    onUpdate: (files) => {
-      console.log('Updated file status:', files);
+    readPermission: ReadPermission.OnlyAuthUser,
+    onUpdate: (updatedFiles) => {
+      setFiles(updatedFiles);
+      console.log('Upload status:', updatedFiles);
     },
   });
 
-  const handleUpload = (files) => {
-    uploadFiles(files);
+  const handleFileSelect = (event) => {
+    const selectedFiles = Array.from(event.target.files);
+    uploadFiles(selectedFiles);
   };
 
   return (
     <div>
-      <input type="file" multiple onChange={(e) => handleUpload(e.target.files)} />
+      <input
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+        disabled={isProccess}
+      />
       {isProccess && <p>Uploading files...</p>}
+
+      <div>
+        {files.map((file) => (
+          <div key={file.id}>
+            <span>{file.fileName}</span>
+            <span> - {file.status}</span>
+            {file.progress && <span> ({file.progress}%)</span>}
+            {file.fileUrl && (
+              <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
+                View File
+              </a>
+            )}
+            {file.methods?.stop && file.status === 'progress' && (
+              <button onClick={file.methods.stop}>Cancel</button>
+            )}
+            {file.error && <p>Error: {file.error.message}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
-
 ```
 
-In this example, the  `useUploader`  hook is used for uploading files. The upload status can be tracked via  `onUpdate`  upon completion of the uploads.
+**Advanced Example with Validation:**
+
+```tsx
+import { useUploader, ReadPermission } from '@emd-cloud/react-components';
+import { useState } from 'react';
+
+const AdvancedUploadComponent = () => {
+  const [files, setFiles] = useState([]);
+
+  const { uploadFiles, isProccess } = useUploader({
+    readPermission: ReadPermission.OnlyAuthUser,
+    chunkSize: 10 * 1024 * 1024, // 10MB chunks for large files
+    presignedUrlTTL: 120, // 2 hour URL validity
+    onBeforeUpload: (files) => {
+      // Validate files before upload
+      const maxSize = 100 * 1024 * 1024; // 100MB max
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+
+      for (const file of files) {
+        if (file.size > maxSize) {
+          alert(`${file.name} exceeds 100MB limit`);
+          return false;
+        }
+        if (!allowedTypes.includes(file.type)) {
+          alert(`${file.name} has unsupported file type`);
+          return false;
+        }
+      }
+      return true;
+    },
+    onBeforeRequest: (req) => {
+      // Log each upload request for debugging
+      console.log('Upload request to:', req.getURL());
+    },
+    onUpdate: (updatedFiles) => {
+      setFiles(updatedFiles);
+
+      // Handle completion
+      updatedFiles.forEach((file) => {
+        if (file.status === 'success') {
+          console.log(`✓ ${file.fileName} uploaded:`, file.fileUrl);
+        } else if (file.status === 'failed') {
+          console.error(`✗ ${file.fileName} failed:`, file.error?.message);
+        }
+      });
+    },
+  });
+
+  const handleFileSelect = (event) => {
+    const selectedFiles = Array.from(event.target.files);
+    uploadFiles(selectedFiles);
+  };
+
+  // Calculate overall progress
+  const overallProgress = files.length > 0
+    ? files.reduce((sum, file) => sum + (parseFloat(file.progress || '0')), 0) / files.length
+    : 0;
+
+  return (
+    <div>
+      <h3>Upload Files</h3>
+      <input
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,application/pdf"
+        onChange={handleFileSelect}
+        disabled={isProccess}
+      />
+
+      {isProccess && (
+        <div>
+          <p>Overall Progress: {overallProgress.toFixed(1)}%</p>
+          <progress value={overallProgress} max="100" />
+        </div>
+      )}
+
+      <ul>
+        {files.map((file) => (
+          <li key={file.id}>
+            <strong>{file.fileName}</strong>
+            <br />
+            Status: {file.status}
+            {file.progress && ` - ${file.progress}%`}
+            {file.bytesUploaded && file.bytesTotal && (
+              <span>
+                {' '}({(file.bytesUploaded / 1024 / 1024).toFixed(2)}MB /
+                {(file.bytesTotal / 1024 / 1024).toFixed(2)}MB)
+              </span>
+            )}
+            <br />
+            {file.fileUrl && (
+              <a href={file.fileUrl} download>Download</a>
+            )}
+            {file.methods?.stop && file.status === 'progress' && (
+              <button onClick={file.methods.stop}>Cancel Upload</button>
+            )}
+            {file.error && (
+              <span style={{ color: 'red' }}>Error: {file.error.message}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+**Example with Specific User Permissions:**
+
+```tsx
+import { useUploader, ReadPermission } from '@emd-cloud/react-components';
+
+const RestrictedUploadComponent = () => {
+  const { uploadFiles, isProccess } = useUploader({
+    readPermission: ReadPermission.OnlyPermittedUsers,
+    permittedUsers: ['user-id-1', 'user-id-2', 'user-id-3'],
+    onUpdate: (files) => {
+      console.log('Files accessible only to specific users:', files);
+    },
+  });
+
+  const handleUpload = (event) => {
+    uploadFiles(Array.from(event.target.files));
+  };
+
+  return (
+    <div>
+      <h3>Upload Restricted Files</h3>
+      <input type="file" multiple onChange={handleUpload} disabled={isProccess} />
+      <p>These files will only be accessible to specified users.</p>
+    </div>
+  );
+};
+```
+
+**Important Notes:**
+
+- The `@emd-cloud/sdk` peer dependency must be installed for this hook to work
+- The component **must** be wrapped with `ApplicationProvider` which provides the API URL and app configuration
+- The hook uses the global configuration from `ApplicationProvider` - per-upload API URL/app overrides are not supported
+- Files are uploaded using the TUS resumable upload protocol
+- Upload progress is tracked in real-time via the `onUpdate` callback
+- Each file gets a unique upload ID for reliable tracking
+- The hook automatically handles authentication via the SDK
 
 <br>
 <br>

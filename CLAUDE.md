@@ -45,7 +45,8 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 
 ### Key Dependencies
 - `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.9.0+)
-- `tus-js-client` - Resumable file upload protocol
+- `tus-js-client` - Peer dependency for resumable file upload protocol
+- `uuid` - Peer dependency for generating unique identifiers
 - `react` & `react-dom` - Peer dependencies (v16.8+ through v19)
 - Semantic Release for automated versioning and publishing
 
@@ -58,6 +59,8 @@ The library exports:
 ### SDK Integration Architecture
 - **ApplicationProvider** automatically initializes and manages the EMD Cloud SDK instance
 - **useAuth** hook uses SDK methods instead of direct API calls
+- **useUploader** hook uses SDK's uploader instance for file uploads with TUS protocol
+- **useDatabase**, **useWebhook**, and **useUserInteraction** all delegate to SDK
 - Graceful fallback when SDK is not installed
 - Dynamic SDK loading to avoid runtime errors
 - Centralized token management through SDK
@@ -68,6 +71,17 @@ The library exports:
 - **Password Recovery**: Complete forgot password flow with email verification
 - **Token Management**: Automatic token handling through SDK
 - **Authorization**: Token-based authentication verification
+
+### File Upload Features Available
+- **Resumable Uploads**: Uses TUS protocol for reliable, resumable file uploads via SDK
+- **Multiple File Support**: Upload multiple files simultaneously with progress tracking
+- **Progress Tracking**: Real-time progress updates with bytes uploaded and percentage
+- **Permission Control**: Flexible read permissions (public, authenticated users, staff, specific users)
+- **Chunked Upload**: Large file support with configurable chunk sizes
+- **Automatic Retry**: Configurable retry delays for failed upload chunks
+- **Upload Control**: Ability to stop/abort individual file uploads
+- **Authentication**: Automatic authentication via SDK token management
+- **Type Safety**: Full TypeScript support with SDK types
 
 ### Database Operations Available
 - **CRUD Operations**: Create, read, update, delete database records
@@ -124,6 +138,65 @@ The library exports:
 - Test SDK integration with mocks to avoid external dependencies
 
 ## Usage Examples
+
+### useUploader Hook
+```tsx
+import { useUploader, ReadPermission } from '@emd-cloud/react-components'
+import { useState } from 'react'
+
+const MyComponent = () => {
+  const [files, setFiles] = useState([])
+
+  const { uploadFiles, isProccess } = useUploader({
+    readPermission: ReadPermission.OnlyAuthUser,
+    integration: 'default',
+    chunkSize: 5 * 1024 * 1024, // 5MB chunks
+    onBeforeUpload: (files) => {
+      // Validate files before upload
+      const validFiles = files.filter(f => f.size < 100 * 1024 * 1024) // Max 100MB
+      if (validFiles.length !== files.length) {
+        alert('Some files are too large')
+        return false
+      }
+      return true
+    },
+    onUpdate: (updatedFiles) => {
+      setFiles(updatedFiles)
+      console.log('Upload progress:', updatedFiles)
+    }
+  })
+
+  const handleFileSelect = (event) => {
+    const selectedFiles = Array.from(event.target.files)
+    uploadFiles(selectedFiles)
+  }
+
+  return (
+    <div>
+      <input
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+        disabled={isProccess}
+      />
+      {isProccess && <p>Uploading files...</p>}
+      <div>
+        {files.map((file) => (
+          <div key={file.id}>
+            <span>{file.fileName}</span>
+            <span>{file.status}</span>
+            {file.progress && <span>{file.progress}%</span>}
+            {file.fileUrl && <a href={file.fileUrl}>Download</a>}
+            {file.methods?.stop && (
+              <button onClick={file.methods.stop}>Cancel</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
 
 ### useDatabase Hook
 ```tsx

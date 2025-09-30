@@ -33,6 +33,13 @@ export type {
   DatabaseDeleteResponse,
   DatabaseTriggerResponse,
   DatabaseSaveMode,
+  // Uploader types
+  ReadPermission,
+  UploadStatus,
+  UploadOptions,
+  UploadProgress,
+  UploadFile,
+  UploadCallbacks,
   // Common types
   CallOptions,
   AuthType

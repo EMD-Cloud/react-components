@@ -23,7 +23,7 @@ const bundle = (config) => ({
 export default [
   bundle({
     plugins: [
-      esbuild(),
+      esbuild({ target: 'es2019' }),
       alias({
         entries: [
           { find: 'src', replacement: path.resolve(__dirname, 'src') },
@@ -43,7 +43,7 @@ export default [
   }),
   bundle({
     plugins: [
-      esbuild(),
+      esbuild({ target: 'es2019', minify: true }),
       alias({
         entries: [
           { find: 'src', replacement: path.resolve(__dirname, 'src') },
