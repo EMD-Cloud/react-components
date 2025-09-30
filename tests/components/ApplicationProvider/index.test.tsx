@@ -121,7 +121,7 @@ describe('ApplicationProvider Tests', () => {
 
   it('should handle SDK initialization error gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    
+
     // Mock the EmdCloud constructor to throw an error
     mockEmdCloudConstructor.mockImplementationOnce(() => {
       throw new Error('SDK initialization failed')
@@ -133,17 +133,18 @@ describe('ApplicationProvider Tests', () => {
       </ApplicationProvider>
     )
 
-    // Should remain false when SDK fails to initialize
-    await new Promise(resolve => setTimeout(resolve, 100))
-    expect(getByTestId('sdkInitialized').textContent).toBe('false')
+    // Children should still render even when SDK fails to initialize
+    await waitFor(() => {
+      expect(getByTestId('sdkInitialized').textContent).toBe('false')
+    })
     expect(consoleSpy).toHaveBeenCalledWith('@emd-cloud/sdk initialization failed:', expect.any(Error))
-    
+
     consoleSpy.mockRestore()
   })
 
   it('should handle missing SDK dependency gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    
+
     // Mock the constructor to throw an error simulating missing dependency
     mockEmdCloudConstructor.mockImplementationOnce(() => {
       throw new Error('Module not found')
@@ -155,9 +156,12 @@ describe('ApplicationProvider Tests', () => {
       </ApplicationProvider>
     )
 
-    await new Promise(resolve => setTimeout(resolve, 100))
-    expect(getByTestId('sdkInitialized').textContent).toBe('false')
-    
+    // Children should still render even when SDK dependency is missing
+    await waitFor(() => {
+      expect(getByTestId('sdkInitialized').textContent).toBe('false')
+    })
+    expect(consoleSpy).toHaveBeenCalledWith('@emd-cloud/sdk initialization failed:', expect.any(Error))
+
     consoleSpy.mockRestore()
   })
 

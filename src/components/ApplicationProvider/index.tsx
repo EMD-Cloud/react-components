@@ -61,8 +61,6 @@ const ApplicationProvider = ({
     }
   }, [app, apiUrl, authToken])
 
-  if (!value.sdkInstance) return null
-
   return (
     <ApplicationContext.Provider value={value}>
       <DispatchContext.Provider value={dispatch}>
