@@ -29,7 +29,7 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 ### Project Structure
 - `src/` - Source code
   - `components/` - React components (ApplicationProvider)
-  - `hooks/` - Custom React hooks (useAuth, useUploader, useDropzone, useDatabase, useWebhook)
+  - `hooks/` - Custom React hooks (useAuth, useUploader, useDropzone, useDatabase, useWebhook, useUserInteraction)
   - `tools/` - Utility modules (uploader.ts)
   - `stories/` - Storybook stories
 - `tests/` - Test files organized by feature
@@ -44,16 +44,16 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 - **Vite**: Used for testing and Storybook
 
 ### Key Dependencies
-- `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.7.1+)
+- `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.9.0+)
 - `tus-js-client` - Resumable file upload protocol
 - `react` & `react-dom` - Peer dependencies (v16.8+ through v19)
 - Semantic Release for automated versioning and publishing
 
 ### Main Exports
 The library exports:
-- **Hooks**: `useAuth` (comprehensive auth with SDK integration), `useUploader`, `useDropzone`, `useDatabase` (database CRUD operations), `useWebhook` (webhook integration)
+- **Hooks**: `useAuth` (comprehensive auth with SDK integration), `useUploader`, `useDropzone`, `useDatabase` (database CRUD operations), `useWebhook` (webhook integration), `useUserInteraction` (social accounts, user management, activity tracking)
 - **Components**: `ApplicationProvider` (manages SDK instance and application state)
-- **Types**: All database and webhook types from @emd-cloud/sdk
+- **Types**: All database, webhook, and user interaction types from @emd-cloud/sdk
 
 ### SDK Integration Architecture
 - **ApplicationProvider** automatically initializes and manages the EMD Cloud SDK instance
@@ -86,8 +86,16 @@ The library exports:
 - **Authentication**: Support for different authentication types
 - **Type Safety**: Full TypeScript support for webhook responses
 
+### User Interaction Features Available
+- **Social Account Management**: Attach/detach social accounts (Steam, VK, Twitch) to user profiles
+- **Activity Tracking**: Track user presence with ping functionality for online/offline status
+- **User Administration**: List and retrieve detailed user information (staff/admin features)
+- **Pagination & Filtering**: Search, filter by status, and paginate through user lists
+- **Type Safety**: Full TypeScript support with proper typing for all operations
+
 ### Testing Coverage
-- Complete test coverage for all hooks (49 tests passing)
+- Complete test coverage for all hooks (68 tests passing)
+- User interaction: 19 test cases covering social accounts, ping, and user management
 - Database operations: 14 test cases covering all CRUD operations
 - Webhook operations: 13 test cases covering all HTTP methods
 - Authentication: 11 test cases covering all auth methods
@@ -175,5 +183,58 @@ const MyComponent = () => {
   }
   
   return <div>Webhook integration component</div>
+}
+```
+
+### useUserInteraction Hook
+```tsx
+import { useUserInteraction, SocialProvider, AccountStatus } from '@emd-cloud/react-components'
+
+const MyComponent = () => {
+  const { attachSocialAccount, detachSocialAccount, ping, getUserList, getUserDetails } = useUserInteraction()
+
+  // Attach a Steam account to current user
+  const connectSteam = async () => {
+    const response = await attachSocialAccount({
+      provider: SocialProvider.STEAM,
+      redirectUrl: 'https://myapp.com/profile'
+    })
+    // Redirect user to Steam login
+    window.location.href = response.url
+  }
+
+  // Detach a social account
+  const disconnectSteam = async () => {
+    const result = await detachSocialAccount(SocialProvider.STEAM)
+    if (result.success) {
+      console.log('Steam account disconnected')
+    }
+  }
+
+  // Track user activity (call periodically)
+  const updateActivity = async () => {
+    await ping()
+  }
+
+  // Get paginated user list (staff only)
+  const loadUsers = async () => {
+    const users = await getUserList({
+      search: 'john',
+      limit: 20,
+      page: 0,
+      orderBy: 'createdAt',
+      sort: 'DESC',
+      accountStatus: AccountStatus.Approved
+    })
+    console.log(`Found ${users.total} users:`, users.data)
+  }
+
+  // Get specific user details
+  const loadUserProfile = async (userId: string) => {
+    const user = await getUserDetails(userId)
+    console.log('User details:', user)
+  }
+
+  return <div>User interaction component</div>
 }
 ```

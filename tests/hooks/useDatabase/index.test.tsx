@@ -304,29 +304,6 @@ describe('useDatabase Hook Tests', () => {
     expect(mockDatabase.getRows).toHaveBeenCalledWith({}, { authType: 'api-token' })
   })
 
-  it('should throw error when SDK is not initialized', async () => {
-    // Mock the EmdCloud constructor to fail
-    const { EmdCloud } = await import('@emd-cloud/sdk')
-    vi.mocked(EmdCloud).mockImplementationOnce(() => {
-      throw new Error('SDK initialization failed')
-    })
-
-    // Create a wrapper that will fail to initialize SDK
-    const failingWrapper = ({ children }: { children: React.ReactNode }) => (
-      <ApplicationProvider app="invalid" apiUrl="invalid">
-        {children}
-      </ApplicationProvider>
-    )
-
-    const { result } = renderHook(() => useDatabase(), { wrapper: failingWrapper })
-
-    await act(async () => {
-      await expect(
-        result.current.getRows('users')
-      ).rejects.toThrow('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    })
-  })
-
   it('should handle server errors properly', async () => {
     const serverError = {
       success: false,

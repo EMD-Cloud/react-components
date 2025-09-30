@@ -12,6 +12,9 @@ export type {
   ForgotPassData,
   ForgotPassCheckCodeData,
   OAuthUrlResponse,
+  SocialAttachResponse,
+  UserListOptions,
+  UserListResponse,
   // Database types
   Database,
   DatabaseRowData,
