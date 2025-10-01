@@ -1,5 +1,4 @@
-// ** React Imports
-import * as React from 'react'
+import { useReducer, useEffect, useState, ReactNode } from 'react'
 
 // ** External Imports
 import { EmdCloud, AppEnvironment } from '@emd-cloud/sdk'
@@ -17,7 +16,8 @@ interface IApplicationProviderProps {
   app: string
   tokenType?: string
   authToken?: string
-  children: React.ReactNode
+  children: ReactNode
+  loadingComponent?: ReactNode
 }
 
 const ApplicationProvider = ({
@@ -26,8 +26,11 @@ const ApplicationProvider = ({
   tokenType = 'token',
   authToken,
   children,
+  loadingComponent = null,
 }: IApplicationProviderProps) => {
-  const [value, dispatch] = React.useReducer<
+  const [sdkReady, setSdkReady] = useState(false)
+
+  const [value, dispatch] = useReducer<
     (
       state: ApplicationDataType,
       { type, payload }: ApplicationActionType,
@@ -42,7 +45,9 @@ const ApplicationProvider = ({
   })
 
   // Initialize SDK instance when component mounts or when dependencies change
-  React.useEffect(() => {
+  useEffect(() => {
+    setSdkReady(false)
+
     try {
       const sdkInstance = new EmdCloud({
         environment: AppEnvironment.Client,
@@ -55,11 +60,23 @@ const ApplicationProvider = ({
         type: ACTION.SET_SDK_INSTANCE,
         payload: sdkInstance,
       })
+
+      dispatch({
+        type: ACTION.AUTH_INITED,
+        payload: true,
+      })
+
+      setSdkReady(true)
     } catch (error) {
       // SDK initialization failed, continue without it
-      console.warn('@emd-cloud/sdk initialization failed:', error)
+      console.error('@emd-cloud/sdk initialization failed:', error)
+      setSdkReady(true)
     }
   }, [app, apiUrl, authToken])
+
+  if (!sdkReady) {
+    return loadingComponent
+  }
 
   return (
     <ApplicationContext.Provider value={value}>

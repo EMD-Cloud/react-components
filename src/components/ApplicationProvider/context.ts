@@ -1,5 +1,5 @@
 // ** React Imports
-import { createContext } from 'react'
+import { createContext, Dispatch } from 'react'
 
 // ** Source code Imports
 import { ApplicationActionType, ApplicationDataType } from './state-manager'
@@ -13,5 +13,5 @@ export const ApplicationContext = createContext<ApplicationDataType>({
 })
 
 export const DispatchContext = createContext<
-  React.Dispatch<ApplicationActionType>
+  Dispatch<ApplicationActionType>
 >(() => {})

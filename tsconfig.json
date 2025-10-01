@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
     "baseUrl": "src",
-    "target": "es2018",                          
+    "target": "es2018",
     "module": "esnext",
-    "moduleResolution": "node",                     
+    "moduleResolution": "node",
     "noEmitOnError": true,
-    "lib": ["es2017", "dom"],       
-    "jsx": "react",                     
-    "strict": true,  
-    "esModuleInterop": false,                 
+    "lib": ["es2017", "dom"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": false,
     "outDir": "out-tsc",
     "rootDir": "./",
     "paths": {

@@ -1,4 +1,3 @@
-import * as React from 'react'
 import ApplicationProvider from 'src/components/ApplicationProvider'
 import LogInComponent from './LogIn'
 import SignUpComponent from './SignUp'

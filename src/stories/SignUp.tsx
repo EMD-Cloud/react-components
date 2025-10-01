@@ -1,13 +1,13 @@
-import * as React from 'react'
+import { useState, useCallback } from 'react'
 import { useAuth } from '..'
 
 const SignUp = () => {
   const { signUpUser } = useAuth()
 
-  const [login, setLogin] = React.useState('')
-  const [password, setPassword] = React.useState('')
+  const [login, setLogin] = useState('')
+  const [password, setPassword] = useState('')
 
-  const handleSubmit = React.useCallback(
+  const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault()
 

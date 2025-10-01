@@ -1,4 +1,3 @@
-import * as React from 'react'
 import Uploader from './Uploader'
 
 export default {

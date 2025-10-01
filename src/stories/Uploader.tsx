@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useState } from 'react'
 import { FileType, UploaderOptions, UploaderType } from 'src/hooks/useUploader'
 import { useUploader, useDropzone } from '..'
 
@@ -21,9 +21,9 @@ const Uploader = ({
   maxNumberOfFiles = 0,
   accept = { "*": [] }
 }: IProps) => {
-  const [value, setValue] = React.useState<FileType[]>([])
-  const [uploadingFiles, setUploadingFiles] = React.useState<FileType[]>([])
-  const [isUploading, setUploading] = React.useState(false)
+  const [value, setValue] = useState<FileType[]>([])
+  const [uploadingFiles, setUploadingFiles] = useState<FileType[]>([])
+  const [isUploading, setUploading] = useState(false)
 
   const onUpdate = (data: FileType[]) => setValue((state) => [...state, ...data])
   const onDelete = (index: number) => setValue((state) => state.filter((_, i) => i !== index))

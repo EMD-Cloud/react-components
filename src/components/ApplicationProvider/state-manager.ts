@@ -9,7 +9,7 @@ export interface ApplicationDataType {
   user?: UserType | null
   apiUrl?: string
   sdkInstance?: EmdCloud | null
-  authInited?: false
+  authInited?: boolean
 }
 
 export enum ACTION {
