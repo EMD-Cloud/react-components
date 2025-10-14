@@ -115,16 +115,7 @@ const useWebhook = (): UseWebhookReturn => {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
-    const result = await webhook.call(id, requestOptions, callOptions)
-    
-    // Check if result is an error (ServerError has success: false or other error indicators)
-    if (result && typeof result === 'object' && 'success' in result && !result.success) {
-      throw result
-    }
-    
-    return result as ReturnType<SDKWebhook['call']> extends Promise<infer R>
-      ? R
-      : never
+    return await webhook.call(id, requestOptions, { ...callOptions, ignoreFormatResponse: true })
   }, [webhook])
 
   return {

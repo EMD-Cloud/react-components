@@ -138,7 +138,7 @@ describe('useDatabase Hook Tests', () => {
         limit: 20,
         sort: [{ column: "createdAt", sort: "desc" }],
       },
-      {}
+      { ignoreFormatResponse: true }
     )
   })
 
@@ -159,7 +159,7 @@ describe('useDatabase Hook Tests', () => {
       {
         query: { "$and": [{ "data.status": { "$eq": "active" } }] },
       },
-      {}
+      { ignoreFormatResponse: true }
     )
   })
 
@@ -179,7 +179,7 @@ describe('useDatabase Hook Tests', () => {
     expect(mockDatabase.getRow).toHaveBeenCalledWith(
       'row1',
       { useHumanReadableNames: true },
-      {}
+      { ignoreFormatResponse: true }
     )
   })
 
@@ -201,7 +201,7 @@ describe('useDatabase Hook Tests', () => {
     expect(mockDatabase.createRow).toHaveBeenCalledWith(
       newRowData,
       { notice: 'Created via API' },
-      {}
+      { ignoreFormatResponse: true }
     )
   })
 
@@ -224,7 +224,7 @@ describe('useDatabase Hook Tests', () => {
       'row1',
       updateData,
       { notice: 'Updated via API' },
-      {}
+      { ignoreFormatResponse: true }
     )
   })
 
@@ -245,7 +245,7 @@ describe('useDatabase Hook Tests', () => {
     })
 
     expect(mockSDK.database).toHaveBeenCalledWith('tasks')
-    expect(mockDatabase.bulkUpdate).toHaveBeenCalledWith(bulkPayload, {})
+    expect(mockDatabase.bulkUpdate).toHaveBeenCalledWith(bulkPayload, { ignoreFormatResponse: true })
   })
 
   it('should delete a single row successfully', async () => {
@@ -259,7 +259,7 @@ describe('useDatabase Hook Tests', () => {
     })
 
     expect(mockSDK.database).toHaveBeenCalledWith('users')
-    expect(mockDatabase.deleteRow).toHaveBeenCalledWith('row1', {})
+    expect(mockDatabase.deleteRow).toHaveBeenCalledWith('row1', { ignoreFormatResponse: true })
   })
 
   it('should delete multiple rows successfully', async () => {
@@ -275,7 +275,7 @@ describe('useDatabase Hook Tests', () => {
     })
 
     expect(mockSDK.database).toHaveBeenCalledWith('users')
-    expect(mockDatabase.deleteRows).toHaveBeenCalledWith(rowIds, {})
+    expect(mockDatabase.deleteRows).toHaveBeenCalledWith(rowIds, { ignoreFormatResponse: true })
   })
 
   it('should trigger button successfully', async () => {
@@ -289,7 +289,7 @@ describe('useDatabase Hook Tests', () => {
     })
 
     expect(mockSDK.database).toHaveBeenCalledWith('tasks')
-    expect(mockDatabase.triggerButton).toHaveBeenCalledWith('row1', 'approve-button', {})
+    expect(mockDatabase.triggerButton).toHaveBeenCalledWith('row1', 'approve-button', { ignoreFormatResponse: true })
   })
 
   it('should handle authentication type in call options', async () => {
@@ -301,7 +301,7 @@ describe('useDatabase Hook Tests', () => {
       await result.current.getRows('users', {}, { authType: 'api-token' })
     })
 
-    expect(mockDatabase.getRows).toHaveBeenCalledWith({}, { authType: 'api-token' })
+    expect(mockDatabase.getRows).toHaveBeenCalledWith({}, { authType: 'api-token', ignoreFormatResponse: true })
   })
 
   it('should handle server errors properly', async () => {
@@ -310,15 +310,14 @@ describe('useDatabase Hook Tests', () => {
       error: 'Database connection failed',
       status: 500,
     }
-    
+
     mockDatabase.getRows.mockResolvedValue(serverError)
 
     const { result } = renderHook(() => useDatabase(), { wrapper })
 
     await act(async () => {
-      await expect(
-        result.current.getRows('users')
-      ).rejects.toEqual(serverError)
+      const response = await result.current.getRows('users')
+      expect(response).toEqual(serverError)
     })
   })
 
