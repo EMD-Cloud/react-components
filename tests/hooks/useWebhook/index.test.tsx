@@ -118,7 +118,7 @@ describe('useWebhook Hook Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webhookData),
       },
-      {}
+      {},
     )
   })
 
@@ -167,7 +167,7 @@ describe('useWebhook Hook Tests', () => {
     expect(mockWebhook.call).toHaveBeenCalledWith(
       'health-check',
       { method: 'GET' },
-      {}
+      {},
     )
   })
 
@@ -205,15 +205,14 @@ describe('useWebhook Hook Tests', () => {
       error: 'Webhook not found',
       status: 404,
     }
-    
+
     mockWebhook.call.mockResolvedValue(serverError)
 
     const { result } = renderHook(() => useWebhook(), { wrapper })
 
     await act(async () => {
-      await expect(
-        result.current.callWebhook('non-existent', { method: 'GET' })
-      ).rejects.toEqual(serverError)
+      const response = await result.current.callWebhook('non-existent', { method: 'GET' })
+      expect(response).toEqual(serverError)
     })
   })
 
@@ -275,7 +274,7 @@ describe('useWebhook Hook Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(complexPayload),
       },
-      {}
+      {},
     )
   })
 })

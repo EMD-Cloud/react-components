@@ -7,7 +7,7 @@ import {
 } from 'src/components/ApplicationProvider/context'
 
 // ** Types
-import type { EmdCloud, CallOptions } from '@emd-cloud/sdk'
+import type { EmdCloud, CallOptions, WebhookResponse, ServerError } from '@emd-cloud/sdk'
 
 type SDKWebhook = EmdCloud['webhook']
 
@@ -27,7 +27,7 @@ export interface UseWebhookReturn {
    * @example
    * ```tsx
    * const { callWebhook } = useWebhook();
-   * 
+   *
    * // Send a POST request with JSON data
    * const response = await callWebhook(
    *   'user-created-webhook',
@@ -44,10 +44,10 @@ export interface UseWebhookReturn {
    *   },
    *   { authType: 'api-token' }
    * );
-   * 
+   *
    * // Send a GET request
    * const data = await callWebhook('health-check', { method: 'GET' });
-   * 
+   *
    * // Send a PUT request
    * const result = await callWebhook(
    *   'update-webhook',
@@ -59,11 +59,16 @@ export interface UseWebhookReturn {
    * );
    * ```
    */
-  callWebhook: (
+  callWebhook(
+    id: string,
+    requestOptions: RequestInit,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<WebhookResponse | ServerError>
+  callWebhook(
     id: string,
     requestOptions: RequestInit,
     callOptions?: CallOptions,
-  ) => ReturnType<SDKWebhook['call']>
+  ): Promise<WebhookResponse['data'] | ServerError>
 }
 
 /**
@@ -110,17 +115,17 @@ const useWebhook = (): UseWebhookReturn => {
     id: string,
     requestOptions: RequestInit,
     callOptions: CallOptions = {},
-  ): ReturnType<SDKWebhook['call']> => {
+  ): Promise<WebhookResponse | WebhookResponse['data'] | ServerError> => {
     if (!webhook) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
-    return await webhook.call(id, requestOptions, { ...callOptions, ignoreFormatResponse: true })
+    return await webhook.call(id, requestOptions, callOptions)
   }, [webhook])
 
   return {
     webhook,
-    callWebhook,
+    callWebhook: callWebhook as UseWebhookReturn['callWebhook'],
   }
 }
 

@@ -39,11 +39,16 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the rows response or ServerError
    */
-  getRows: <T = Record<string, any>>(
+  getRows<T = Record<string, any>>(
+    collectionId: string,
+    options: DatabaseListOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseRowsResponse<T> | ServerError>
+  getRows<T = Record<string, any>>(
     collectionId: string,
     options?: DatabaseListOptions,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseRowsResponse<T> | ServerError>
+  ): Promise<DatabaseRowsResponse<T>['data'] | ServerError>
 
   /**
    * Gets the total count of rows matching the specified query.
@@ -53,11 +58,16 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the count response or ServerError
    */
-  countRows: (
+  countRows(
+    collectionId: string,
+    options: DatabaseCountOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseCountResponse | ServerError>
+  countRows(
     collectionId: string,
     options?: DatabaseCountOptions,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseCountResponse | ServerError>
+  ): Promise<DatabaseCountResponse['data'] | ServerError>
 
   /**
    * Retrieves a single row by its ID.
@@ -68,12 +78,18 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the row response or ServerError
    */
-  getRow: <T = Record<string, any>>(
+  getRow<T = Record<string, any>>(
+    collectionId: string,
+    rowId: string,
+    options: DatabaseGetRowOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseRowResponse<T> | ServerError>
+  getRow<T = Record<string, any>>(
     collectionId: string,
     rowId: string,
     options?: DatabaseGetRowOptions,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseRowResponse<T> | ServerError>
+  ): Promise<DatabaseRowResponse<T>['data'] | ServerError>
 
   /**
    * Creates a new row in the database collection.
@@ -84,12 +100,18 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the created row response or ServerError
    */
-  createRow: <T = Record<string, any>>(
+  createRow<T = Record<string, any>>(
+    collectionId: string,
+    rowData: Record<string, any>,
+    options: DatabaseCreateOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseRowResponse<T> | ServerError>
+  createRow<T = Record<string, any>>(
     collectionId: string,
     rowData: Record<string, any>,
     options?: DatabaseCreateOptions,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseRowResponse<T> | ServerError>
+  ): Promise<DatabaseRowResponse<T>['data'] | ServerError>
 
   /**
    * Updates an existing row in the database collection.
@@ -101,13 +123,20 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the updated row response or ServerError
    */
-  updateRow: <T = Record<string, any>>(
+  updateRow<T = Record<string, any>>(
+    collectionId: string,
+    rowId: string,
+    rowData: Record<string, any>,
+    options: DatabaseUpdateOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseRowResponse<T> | ServerError>
+  updateRow<T = Record<string, any>>(
     collectionId: string,
     rowId: string,
     rowData: Record<string, any>,
     options?: DatabaseUpdateOptions,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseRowResponse<T> | ServerError>
+  ): Promise<DatabaseRowResponse<T>['data'] | ServerError>
 
   /**
    * Updates multiple rows matching the specified query.
@@ -117,11 +146,16 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the bulk update response or ServerError
    */
-  bulkUpdate: (
+  bulkUpdate(
+    collectionId: string,
+    payload: DatabaseBulkUpdatePayload,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseBulkResponse | ServerError>
+  bulkUpdate(
     collectionId: string,
     payload: DatabaseBulkUpdatePayload,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseBulkResponse | ServerError>
+  ): Promise<DatabaseBulkResponse['data'] | ServerError>
 
   /**
    * Deletes a single row by its ID.
@@ -131,11 +165,16 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the delete response or ServerError
    */
-  deleteRow: (
+  deleteRow(
+    collectionId: string,
+    rowId: string,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseDeleteResponse | ServerError>
+  deleteRow(
     collectionId: string,
     rowId: string,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseDeleteResponse | ServerError>
+  ): Promise<DatabaseDeleteResponse['data'] | ServerError>
 
   /**
    * Deletes multiple rows by their IDs.
@@ -145,11 +184,16 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the delete response or ServerError
    */
-  deleteRows: (
+  deleteRows(
+    collectionId: string,
+    rowIds: string[],
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseDeleteResponse | ServerError>
+  deleteRows(
     collectionId: string,
     rowIds: string[],
     callOptions?: CallOptions,
-  ) => Promise<DatabaseDeleteResponse | ServerError>
+  ): Promise<DatabaseDeleteResponse['data'] | ServerError>
 
   /**
    * Triggers a button action on a specific row.
@@ -160,12 +204,18 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the trigger response or ServerError
    */
-  triggerButton: (
+  triggerButton(
+    collectionId: string,
+    rowId: string,
+    columnId: string,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseTriggerResponse | ServerError>
+  triggerButton(
     collectionId: string,
     rowId: string,
     columnId: string,
     callOptions?: CallOptions,
-  ) => Promise<DatabaseTriggerResponse | ServerError>
+  ): Promise<DatabaseTriggerResponse['data'] | ServerError>
 }
 
 /**
@@ -209,55 +259,55 @@ const useDatabase = (): UseDatabaseReturn => {
   const getRows = useCallback(async <T = Record<string, any>>(
     collectionId: string,
     options: DatabaseListOptions = {},
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseRowsResponse<T> | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseRowsResponse<T> | DatabaseRowsResponse<T>['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId)
-    return await dbInstance.getRows<T>(options, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.getRows<T>(options, callOptions)
   }, [sdkDatabase])
 
   const countRows = useCallback(async (
     collectionId: string,
     options: DatabaseCountOptions = {},
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseCountResponse | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseCountResponse | DatabaseCountResponse['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.countRows(options, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.countRows(options, callOptions)
   }, [sdkDatabase])
 
   const getRow = useCallback(async <T = Record<string, any>>(
     collectionId: string,
     rowId: string,
     options: DatabaseGetRowOptions = {},
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseRowResponse<T> | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseRowResponse<T> | DatabaseRowResponse<T>['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.getRow<T>(rowId, options, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.getRow<T>(rowId, options, callOptions)
   }, [sdkDatabase])
 
   const createRow = useCallback(async <T = Record<string, any>>(
     collectionId: string,
     rowData: Record<string, any>,
     options: DatabaseCreateOptions = {},
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseRowResponse<T> | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseRowResponse<T> | DatabaseRowResponse<T>['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.createRow<T>(rowData, options, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.createRow<T>(rowData, options, callOptions)
   }, [sdkDatabase])
 
   const updateRow = useCallback(async <T = Record<string, any>>(
@@ -265,80 +315,80 @@ const useDatabase = (): UseDatabaseReturn => {
     rowId: string,
     rowData: Record<string, any>,
     options: DatabaseUpdateOptions = {},
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseRowResponse<T> | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseRowResponse<T> | DatabaseRowResponse<T>['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.updateRow<T>(rowId, rowData, options, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.updateRow<T>(rowId, rowData, options, callOptions)
   }, [sdkDatabase])
 
   const bulkUpdate = useCallback(async (
     collectionId: string,
     payload: DatabaseBulkUpdatePayload,
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseBulkResponse | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseBulkResponse | DatabaseBulkResponse['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.bulkUpdate(payload, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.bulkUpdate(payload, callOptions)
   }, [sdkDatabase])
 
   const deleteRow = useCallback(async (
     collectionId: string,
     rowId: string,
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseDeleteResponse | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseDeleteResponse | DatabaseDeleteResponse['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.deleteRow(rowId, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.deleteRow(rowId, callOptions)
   }, [sdkDatabase])
 
   const deleteRows = useCallback(async (
     collectionId: string,
     rowIds: string[],
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseDeleteResponse | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseDeleteResponse | DatabaseDeleteResponse['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.deleteRows(rowIds, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.deleteRows(rowIds, callOptions)
   }, [sdkDatabase])
 
   const triggerButton = useCallback(async (
     collectionId: string,
     rowId: string,
     columnId: string,
-    callOptions: CallOptions = { authType: undefined },
-  ): Promise<DatabaseTriggerResponse | ServerError> => {
+    callOptions: CallOptions = {},
+  ): Promise<DatabaseTriggerResponse | DatabaseTriggerResponse['data'] | ServerError> => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
     const dbInstance = sdkDatabase(collectionId)
-    return await dbInstance.triggerButton(rowId, columnId, { ...callOptions, ignoreFormatResponse: true })
+    return await dbInstance.triggerButton(rowId, columnId, callOptions)
   }, [sdkDatabase])
 
   return {
     database,
-    getRows,
-    countRows,
-    getRow,
-    createRow,
-    updateRow,
-    bulkUpdate,
-    deleteRow,
-    deleteRows,
-    triggerButton,
+    getRows: getRows as UseDatabaseReturn['getRows'],
+    countRows: countRows as UseDatabaseReturn['countRows'],
+    getRow: getRow as UseDatabaseReturn['getRow'],
+    createRow: createRow as UseDatabaseReturn['createRow'],
+    updateRow: updateRow as UseDatabaseReturn['updateRow'],
+    bulkUpdate: bulkUpdate as UseDatabaseReturn['bulkUpdate'],
+    deleteRow: deleteRow as UseDatabaseReturn['deleteRow'],
+    deleteRows: deleteRows as UseDatabaseReturn['deleteRows'],
+    triggerButton: triggerButton as UseDatabaseReturn['triggerButton'],
   }
 }
 
