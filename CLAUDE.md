@@ -76,6 +76,8 @@ The library exports:
 - **Resumable Uploads**: Uses TUS protocol for reliable, resumable file uploads via SDK
 - **Multiple File Support**: Upload multiple files simultaneously with progress tracking
 - **Progress Tracking**: Real-time progress updates with bytes uploaded and percentage
+- **Batch Completion Callbacks**: `onSuccess` fires once when all files succeed, `onFailed` fires once when any file fails
+- **Callback Management**: `onUpdate` fires periodically during upload and stops when batch completes
 - **Permission Control**: Flexible read permissions (public, authenticated users, staff, specific users)
 - **Chunked Upload**: Large file support with configurable chunk sizes
 - **Automatic Retry**: Configurable retry delays for failed upload chunks
@@ -108,11 +110,12 @@ The library exports:
 - **Type Safety**: Full TypeScript support with proper typing for all operations
 
 ### Testing Coverage
-- Complete test coverage for all hooks (68 tests passing)
+- Complete test coverage for all hooks (72 tests passing)
 - User interaction: 19 test cases covering social accounts, ping, and user management
 - Database operations: 14 test cases covering all CRUD operations
 - Webhook operations: 13 test cases covering all HTTP methods
 - Authentication: 11 test cases covering all auth methods
+- File uploader: 7 test cases covering upload flow, callbacks, and batch completion
 - Mock SDK integration prevents external API dependencies
 - Error handling and edge case coverage
 
@@ -146,6 +149,7 @@ import { useState } from 'react'
 
 const MyComponent = () => {
   const [files, setFiles] = useState([])
+  const [uploadStatus, setUploadStatus] = useState('')
 
   const { uploadFiles, isProccess } = useUploader({
     readPermission: ReadPermission.OnlyAuthUser,
@@ -161,13 +165,33 @@ const MyComponent = () => {
       return true
     },
     onUpdate: (updatedFiles) => {
+      // Fires periodically during upload with progress updates
       setFiles(updatedFiles)
       console.log('Upload progress:', updatedFiles)
+    },
+    onSuccess: (completedFiles) => {
+      // Fires once when all files succeed
+      console.log('All files uploaded successfully!')
+      setUploadStatus('success')
+      completedFiles.forEach(file => {
+        console.log(`Uploaded: ${file.fileUrl}`)
+      })
+    },
+    onFailed: (completedFiles) => {
+      // Fires once when any file fails
+      console.error('Upload batch failed!')
+      setUploadStatus('failed')
+      completedFiles.forEach(file => {
+        if (file.status === 'failed') {
+          console.error(`Failed: ${file.fileName} - ${file.error?.message}`)
+        }
+      })
     }
   })
 
   const handleFileSelect = (event) => {
     const selectedFiles = Array.from(event.target.files)
+    setUploadStatus('')
     uploadFiles(selectedFiles)
   }
 
@@ -180,6 +204,8 @@ const MyComponent = () => {
         disabled={isProccess}
       />
       {isProccess && <p>Uploading files...</p>}
+      {uploadStatus === 'success' && <p>All files uploaded successfully!</p>}
+      {uploadStatus === 'failed' && <p>Some files failed to upload</p>}
       <div>
         {files.map((file) => (
           <div key={file.id}>

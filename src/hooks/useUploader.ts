@@ -46,7 +46,9 @@ export interface UploaderType {
   retryDelays?: number[]
   onBeforeUpload?: (files: File[]) => boolean
   onBeforeRequest?: (req: any) => void
-  onUpdate: (files: FileType[]) => void
+  onUpdate?: (files: FileType[]) => void
+  onSuccess?: (files: FileType[]) => void
+  onFailed?: (files: FileType[]) => void
 }
 
 /**
@@ -74,7 +76,9 @@ export interface UploaderType {
  * @param {number[]} [params.retryDelays=[0,3000,5000,10000,20000]] - Retry delay intervals in milliseconds
  * @param {(files: File[]) => boolean} [params.onBeforeUpload] - Callback before upload starts (return false to cancel)
  * @param {(req: any) => void} [params.onBeforeRequest] - Callback before each HTTP request (for request interception)
- * @param {(files: FileType[]) => void} params.onUpdate - Callback when file statuses update
+ * @param {(files: FileType[]) => void} [params.onUpdate] - Callback when file statuses update (fires periodically during upload, stops when all files complete)
+ * @param {(files: FileType[]) => void} [params.onSuccess] - Callback fired once when all files in the batch succeed
+ * @param {(files: FileType[]) => void} [params.onFailed] - Callback fired once when any file in the batch fails
  *
  * @returns {{ uploadFiles: (files: File[]) => void, isProcess: boolean }}
  * - `uploadFiles`: Function to initiate file uploads
@@ -105,14 +109,23 @@ export interface UploaderType {
  *       console.log('Upload request:', req.getURL())
  *     },
  *     onUpdate: (updatedFiles) => {
+ *       // Fires periodically during upload
  *       setFiles(updatedFiles)
- *
- *       // Check for completed/failed uploads
- *       updatedFiles.forEach(file => {
- *         if (file.status === 'success') {
- *           console.log(`File uploaded: ${file.fileUrl}`)
- *         } else if (file.status === 'failed') {
- *           console.error(`Upload failed: ${file.error?.message}`)
+ *       console.log('Upload progress:', updatedFiles)
+ *     },
+ *     onSuccess: (completedFiles) => {
+ *       // Fires once when all files succeed
+ *       console.log('All files uploaded successfully!')
+ *       completedFiles.forEach(file => {
+ *         console.log(`File uploaded: ${file.fileUrl}`)
+ *       })
+ *     },
+ *     onFailed: (completedFiles) => {
+ *       // Fires once when any file fails
+ *       console.error('Upload batch failed!')
+ *       completedFiles.forEach(file => {
+ *         if (file.status === 'failed') {
+ *           console.error(`Failed: ${file.fileName} - ${file.error?.message}`)
  *         }
  *       })
  *     }
@@ -172,6 +185,8 @@ const useUploader = ({
   onBeforeUpload = () => true,
   onBeforeRequest,
   onUpdate,
+  onSuccess,
+  onFailed,
 }: UploaderType): {
   uploadFiles: (files: File[]) => void
   isProcess: boolean
@@ -180,6 +195,9 @@ const useUploader = ({
   const [isProcess, setIsProcess] = useState<boolean>(false)
   const [observedFiles, setObservedFiles] = useState<FileType[]>([])
   const filesMapRef = useRef<Map<string, FileType>>(new Map())
+  const batchSizeRef = useRef<number>(0)
+  const batchCallbacksFiredRef = useRef<boolean>(false)
+  const batchCompleteRef = useRef<boolean>(false)
 
   const appData = useContext(ApplicationContext)
 
@@ -192,6 +210,45 @@ const useUploader = ({
     return appData.sdkInstance.uploader
   }, [appData.sdkInstance])
 
+  // Check if batch is complete and fire appropriate callbacks
+  const checkBatchCompletion = useCallback(() => {
+    // Skip if callbacks already fired or batch not initialized
+    if (batchCallbacksFiredRef.current || batchSizeRef.current === 0) {
+      return
+    }
+
+    const allFiles = Array.from(filesMapRef.current.values())
+
+    // Check if all files have reached a final state (success or failed)
+    const completedFiles = allFiles.filter(
+      (file) => file.status === 'success' || file.status === 'failed'
+    )
+
+    // If not all files are done, return
+    if (completedFiles.length < batchSizeRef.current) {
+      return
+    }
+
+    // Mark batch as complete
+    batchCompleteRef.current = true
+    batchCallbacksFiredRef.current = true
+
+    // Check if any files failed
+    const failedFiles = allFiles.filter((file) => file.status === 'failed')
+
+    if (failedFiles.length > 0) {
+      // At least one file failed - call onFailed
+      if (onFailed) {
+        onFailed(allFiles)
+      }
+    } else {
+      // All files succeeded - call onSuccess
+      if (onSuccess) {
+        onSuccess(allFiles)
+      }
+    }
+  }, [onSuccess, onFailed])
+
   // Update observed files array when map changes
   useEffect(() => {
     const filesInProgress = Array.from(filesMapRef.current.values()).some(
@@ -202,9 +259,15 @@ const useUploader = ({
     if (isFirstRun.current) {
       isFirstRun.current = false
     } else {
-      onUpdate(observedFiles)
+      // Only call onUpdate if batch is not complete
+      if (!batchCompleteRef.current && onUpdate) {
+        onUpdate(observedFiles)
+      }
     }
-  }, [observedFiles, onUpdate])
+
+    // Check if batch is complete
+    checkBatchCompletion()
+  }, [observedFiles, onUpdate, checkBatchCompletion])
 
   const uploadFiles = useCallback(
     (files: File[]) => {
@@ -218,6 +281,11 @@ const useUploader = ({
       const isContinue = onBeforeUpload(files)
       if (!isContinue) return
 
+      // Initialize batch tracking for new upload batch
+      batchSizeRef.current = files.length
+      batchCallbacksFiredRef.current = false
+      batchCompleteRef.current = false
+
       // Upload options for SDK
       const uploadOptions: UploadOptions = {
         integration: integrationId,
@@ -230,9 +298,7 @@ const useUploader = ({
         ...(onBeforeRequest && { onBeforeRequest }),
       }
 
-      // Start uploads and build initial file tracking
-      const newFiles: FileType[] = []
-
+      // Start uploads and initialize file tracking
       files.forEach((file) => {
         try {
           const { uploadId, file: uploadFile } =
@@ -251,7 +317,7 @@ const useUploader = ({
                   setObservedFiles(Array.from(filesMapRef.current.values()))
                 }
               },
-              onSuccess: (fileId: string, fileUrl: string) => {
+              onSuccess: (_fileId: string, fileUrl: string) => {
                 const currentFile = filesMapRef.current.get(uploadId)
                 if (currentFile) {
                   const updatedFile: FileType = {
@@ -293,7 +359,6 @@ const useUploader = ({
           }
 
           filesMapRef.current.set(uploadId, fileEntry)
-          newFiles.push(fileEntry)
         } catch (error) {
           console.error('Failed to start upload:', error)
           // Create a failed file entry for the error
@@ -303,7 +368,6 @@ const useUploader = ({
             status: 'failed',
             error: error as Error,
           }
-          newFiles.push(errorFile)
           filesMapRef.current.set(errorFile.id, errorFile)
         }
       })
@@ -322,6 +386,7 @@ const useUploader = ({
       headers,
       onBeforeUpload,
       onBeforeRequest,
+      checkBatchCompletion,
     ],
   )
 

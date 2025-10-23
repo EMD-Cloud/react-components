@@ -152,4 +152,172 @@ describe('Test useUploader', () => {
 
     expect(onUpdate).not.toHaveBeenCalled()
   })
+
+  it('onSuccess callback fires once when all files succeed', async () => {
+    const onSuccess = vi.fn()
+    const onFailed = vi.fn()
+    const onUpdate = vi.fn()
+
+    await new Promise((res) => {
+      const { result: { current: { uploadFiles } } } = renderHook(() => useUploader({
+        headers: {
+          Authorization: `token ${config.authToken}`
+        },
+        onUpdate,
+        onSuccess: (files) => {
+          onSuccess(files)
+          res(undefined)
+        },
+        onFailed
+      }), { wrapper })
+
+      uploadFiles(testFiles)
+    })
+
+    // onSuccess should be called exactly once
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+    expect(onFailed).not.toHaveBeenCalled()
+
+    // Should receive all files in success state
+    const files = onSuccess.mock.calls[0][0]
+    expect(files).toHaveLength(2)
+    expect(files.every((f: FileType) => f.status === 'success')).toBe(true)
+  })
+
+  it('onFailed callback fires once when any file fails', async () => {
+    const onSuccess = vi.fn()
+    const onFailed = vi.fn()
+
+    // Mock one successful and one failed upload
+    mockUploadFile.mockImplementationOnce((file, options, callbacks) => {
+      const uploadId = `upload-${Date.now()}-${Math.random()}`
+
+      setTimeout(() => {
+        callbacks.onProgress({ percentage: 50, bytesUploaded: 500, bytesTotal: 1000 })
+      }, 10)
+
+      setTimeout(() => {
+        callbacks.onSuccess('file-id-123', 'https://example.com/file.txt')
+      }, 20)
+
+      return {
+        uploadId,
+        file: {
+          abort: vi.fn(),
+        },
+      }
+    }).mockImplementationOnce((file, options, callbacks) => {
+      const uploadId = `upload-${Date.now()}-${Math.random()}`
+
+      setTimeout(() => {
+        callbacks.onError(new Error('Upload failed'))
+      }, 15)
+
+      return {
+        uploadId,
+        file: {
+          abort: vi.fn(),
+        },
+      }
+    })
+
+    await new Promise((res) => {
+      const { result: { current: { uploadFiles } } } = renderHook(() => useUploader({
+        headers: {
+          Authorization: `token ${config.authToken}`
+        },
+        onSuccess,
+        onFailed: (files) => {
+          onFailed(files)
+          res(undefined)
+        }
+      }), { wrapper })
+
+      uploadFiles(testFiles)
+    })
+
+    // onFailed should be called exactly once
+    expect(onFailed).toHaveBeenCalledTimes(1)
+    expect(onSuccess).not.toHaveBeenCalled()
+
+    // Should receive all files including the failed one
+    const files = onFailed.mock.calls[0][0]
+    expect(files).toHaveLength(2)
+    expect(files.some((f: FileType) => f.status === 'failed')).toBe(true)
+
+    // Restore original mock implementation
+    mockUploadFile.mockImplementation((file, options, callbacks) => {
+      const uploadId = `upload-${Date.now()}-${Math.random()}`
+
+      setTimeout(() => {
+        callbacks.onProgress({ percentage: 50, bytesUploaded: 500, bytesTotal: 1000 })
+      }, 10)
+
+      setTimeout(() => {
+        callbacks.onSuccess('file-id-123', 'https://example.com/file.txt')
+      }, 20)
+
+      return {
+        uploadId,
+        file: {
+          abort: vi.fn(),
+        },
+      }
+    })
+  })
+
+  it('onUpdate stops firing after batch completes', async () => {
+    const onUpdate = vi.fn()
+    let updateCallCount = 0
+
+    await new Promise((res) => {
+      const { result: { current: { uploadFiles } } } = renderHook(() => useUploader({
+        headers: {
+          Authorization: `token ${config.authToken}`
+        },
+        onUpdate: (files) => {
+          updateCallCount++
+          onUpdate(files)
+        },
+        onSuccess: () => {
+          // Wait a bit after success to ensure onUpdate isn't called again
+          setTimeout(res, 50)
+        }
+      }), { wrapper })
+
+      uploadFiles(testFiles)
+    })
+
+    const callCountAfterSuccess = updateCallCount
+
+    // Wait to ensure no more calls
+    await new Promise(res => setTimeout(res, 50))
+
+    // onUpdate should not be called after batch completes
+    expect(updateCallCount).toBe(callCountAfterSuccess)
+  })
+
+  it('onSuccess and onFailed are optional', async () => {
+    const onUpdate = vi.fn()
+
+    await new Promise((res) => {
+      const { result: { current: { uploadFiles } } } = renderHook(() => useUploader({
+        headers: {
+          Authorization: `token ${config.authToken}`
+        },
+        onUpdate: (files) => {
+          onUpdate(files)
+          // Resolve after files are in success state
+          if (files.every(f => f.status === 'success')) {
+            res(undefined)
+          }
+        }
+      }), { wrapper })
+
+      uploadFiles(testFiles)
+    })
+
+    // Should work without errors even without onSuccess/onFailed
+    expect(onUpdate).toHaveBeenCalled()
+  })
 })
