@@ -120,7 +120,7 @@ describe('ApplicationProvider Tests', () => {
   })
 
   it('should handle SDK initialization error gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     // Mock the EmdCloud constructor to throw an error
     mockEmdCloudConstructor.mockImplementationOnce(() => {
@@ -143,7 +143,7 @@ describe('ApplicationProvider Tests', () => {
   })
 
   it('should handle missing SDK dependency gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     // Mock the constructor to throw an error simulating missing dependency
     mockEmdCloudConstructor.mockImplementationOnce(() => {

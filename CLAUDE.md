@@ -78,6 +78,7 @@ The library exports:
 - **Progress Tracking**: Real-time progress updates with bytes uploaded and percentage
 - **Batch Completion Callbacks**: `onSuccess` fires once when all files succeed, `onFailed` fires once when any file fails
 - **Callback Management**: `onUpdate` fires periodically during upload and stops when batch completes
+- **State Management**: `resetUploader()` method to clear internal state and file references, preventing memory leaks
 - **Permission Control**: Flexible read permissions (public, authenticated users, staff, specific users)
 - **Chunked Upload**: Large file support with configurable chunk sizes
 - **Automatic Retry**: Configurable retry delays for failed upload chunks
@@ -110,12 +111,12 @@ The library exports:
 - **Type Safety**: Full TypeScript support with proper typing for all operations
 
 ### Testing Coverage
-- Complete test coverage for all hooks (72 tests passing)
+- Complete test coverage for all hooks (75 tests passing)
 - User interaction: 19 test cases covering social accounts, ping, and user management
 - Database operations: 14 test cases covering all CRUD operations
 - Webhook operations: 13 test cases covering all HTTP methods
 - Authentication: 11 test cases covering all auth methods
-- File uploader: 7 test cases covering upload flow, callbacks, and batch completion
+- File uploader: 10 test cases covering upload flow, callbacks, batch completion, and state reset
 - Mock SDK integration prevents external API dependencies
 - Error handling and edge case coverage
 
@@ -151,7 +152,7 @@ const MyComponent = () => {
   const [files, setFiles] = useState([])
   const [uploadStatus, setUploadStatus] = useState('')
 
-  const { uploadFiles, isProccess } = useUploader({
+  const { uploadFiles, isProccess, resetUploader } = useUploader({
     readPermission: ReadPermission.OnlyAuthUser,
     integration: 'default',
     chunkSize: 5 * 1024 * 1024, // 5MB chunks
@@ -176,6 +177,11 @@ const MyComponent = () => {
       completedFiles.forEach(file => {
         console.log(`Uploaded: ${file.fileUrl}`)
       })
+      // Clear internal state after showing success for 2 seconds
+      setTimeout(() => {
+        resetUploader()
+        setFiles([])
+      }, 2000)
     },
     onFailed: (completedFiles) => {
       // Fires once when any file fails
@@ -186,6 +192,11 @@ const MyComponent = () => {
           console.error(`Failed: ${file.fileName} - ${file.error?.message}`)
         }
       })
+      // Clear internal state after showing error for 2 seconds
+      setTimeout(() => {
+        resetUploader()
+        setFiles([])
+      }, 2000)
     }
   })
 

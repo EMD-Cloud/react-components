@@ -80,9 +80,10 @@ export interface UploaderType {
  * @param {(files: FileType[]) => void} [params.onSuccess] - Callback fired once when all files in the batch succeed
  * @param {(files: FileType[]) => void} [params.onFailed] - Callback fired once when any file in the batch fails
  *
- * @returns {{ uploadFiles: (files: File[]) => void, isProcess: boolean }}
+ * @returns {{ uploadFiles: (files: File[]) => void, isProcess: boolean, resetUploader: () => void }}
  * - `uploadFiles`: Function to initiate file uploads
  * - `isProcess`: Boolean indicating if any uploads are in progress
+ * - `resetUploader`: Function to clear all internal state and file references (call after upload completion to free memory)
  *
  * @example
  * ```tsx
@@ -92,7 +93,7 @@ export interface UploaderType {
  * const FileUploadComponent = () => {
  *   const [files, setFiles] = useState([])
  *
- *   const { uploadFiles, isProccess } = useUploader({
+ *   const { uploadFiles, isProccess, resetUploader } = useUploader({
  *     readPermission: ReadPermission.OnlyAuthUser,
  *     chunkSize: 10 * 1024 * 1024, // 10MB chunks
  *     onBeforeUpload: (files) => {
@@ -119,6 +120,8 @@ export interface UploaderType {
  *       completedFiles.forEach(file => {
  *         console.log(`File uploaded: ${file.fileUrl}`)
  *       })
+ *       // Clear state after successful upload
+ *       setTimeout(() => resetUploader(), 2000)
  *     },
  *     onFailed: (completedFiles) => {
  *       // Fires once when any file fails
@@ -128,6 +131,8 @@ export interface UploaderType {
  *           console.error(`Failed: ${file.fileName} - ${file.error?.message}`)
  *         }
  *       })
+ *       // Clear state after failed upload
+ *       setTimeout(() => resetUploader(), 2000)
  *     }
  *   })
  *
@@ -190,6 +195,7 @@ const useUploader = ({
 }: UploaderType): {
   uploadFiles: (files: File[]) => void
   isProcess: boolean
+  resetUploader: () => void
 } => {
   const isFirstRun = useRef(true)
   const [isProcess, setIsProcess] = useState<boolean>(false)
@@ -390,7 +396,16 @@ const useUploader = ({
     ],
   )
 
-  return { uploadFiles, isProcess: isProcess }
+  const resetUploader = useCallback(() => {
+    filesMapRef.current.clear()
+    setObservedFiles([])
+    batchSizeRef.current = 0
+    batchCallbacksFiredRef.current = false
+    batchCompleteRef.current = false
+    isFirstRun.current = true
+  }, [])
+
+  return { uploadFiles, isProcess: isProcess, resetUploader }
 }
 
 export default useUploader
