@@ -12,6 +12,9 @@
         -   [Hook: useDatabase](#hook--usedatabase)
     -   [Webhook Hooks](#webhook-hooks)
         -   [Hook: useWebhook](#hook--usewebhook)
+    -   [Chat Hooks](#chat-hooks)
+        -   [Hook: useChat](#hook--usechat)
+        -   [Hook: useChatWebSocket](#hook--usechatwebsocket)
     -   [Uploader Hooks](#uploader-hooks)
         -   [Hook: useUploader](#hook--useuploader)
         -   [Hook: useDropzone](#hook--usedropzone)
@@ -34,7 +37,7 @@ The EMD Cloud React components provide a set of React components for interacting
     # Install the React components
     npm install @emd-cloud/react-components
     
-    # Install the required peer dependencies (v1.7.1+ required for database and webhook features)
+    # Install the required peer dependencies (v1.11.0+ required for chat features)
     npm install @emd-cloud/sdk
     ```
 
@@ -123,6 +126,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onStatusChange }) => {
 - `DatabaseDeleteResponse` - Delete operation response format
 - `DatabaseTriggerResponse` - Button trigger response format
 - `DatabaseSaveMode` - Save mode enum for database operations
+
+**Chat Types:**
+- `ChatChannelType` - Chat channel type enum (`Public`, `StaffToUser`, `PeerToPeer`, `Staff`)
+- `ChatReadPermission` - Read permission levels for channels
+- `ChatWritePermission` - Write permission levels for channels
+- `ChatChannel` - Chat channel data structure
+- `ChatMessage` - Chat message structure
+- `ChatAttachment` - Message attachment structure (images, files)
+- `ChatListOptions` - Options for listing channels
+- `ChatMessageListOptions` - Options for listing messages
+- `SendMessageOptions` - Options for sending messages
+- `GetUnreadCountOptions` - Options for getting unread counts
+- `UnreadCountResponse` - Unread message count response
+- `ConnectionState` - WebSocket connection state enum (`Connecting`, `Connected`, `Disconnected`, `Error`)
+- `WebSocketEvent` - WebSocket event types enum
+- `ChatWebSocketOptions` - WebSocket configuration options
+- `ChatWebSocketCallbacks` - Event handler callbacks for real-time events
 
 **Common Types:**
 - `CallOptions` - API call configuration options
@@ -1281,6 +1301,777 @@ const RobustWebhookComponent = () => {
       ])}>
         Send Bulk Notifications
       </button>
+    </div>
+  );
+};
+```
+
+<br>
+
+### Chat Hooks:
+
+#### Hook: `useChat`
+
+**Description:**
+
+The `useChat` hook provides comprehensive REST API operations for managing chat channels and messages in EMD Cloud using the EMD Cloud SDK. It offers complete chat functionality including channel creation, message sending, unread tracking, and support for multiple channel types (public, staff-to-user, peer-to-peer, and staff channels). This hook automatically manages authentication and provides error handling for all chat operations.
+
+**Available Methods:**
+
+- `listChannels` (function): List chat channels with filtering and pagination
+- `createChannelByType` (function): Create or get existing channel by type
+- `upsertChannel` (function): Create or update a chat channel
+- `getChannel` (function): Get channel details
+- `deleteChannel` (function): Delete a chat channel
+- `sendMessage` (function): Send a message with optional attachments
+- `listMessages` (function): List messages in a channel with pagination
+- `deleteMessage` (function): Delete a message
+- `getUnreadCount` (function): Get unread message counts for a channel
+
+**Key Features:**
+
+- **Channel Management**: Create, list, update, and delete chat channels
+- **Multiple Channel Types**: Support for public, staff-to-user, peer-to-peer, and staff channels
+- **Message Operations**: Send, list, and delete messages with attachment support
+- **Unread Tracking**: Track and clear unread message counts
+- **Search & Pagination**: Search channels/messages with flexible pagination
+- **Attachment Support**: Send images, files, and other attachments with messages
+- **Type Safety**: Full TypeScript support with SDK types
+- **Error Handling**: Comprehensive error handling with meaningful messages
+
+**Basic Channel Management Example:**
+
+```tsx
+import { useChat, ChatChannelType } from '@emd-cloud/react-components';
+import { useState, useEffect } from 'react';
+
+const ChannelManager = () => {
+  const [channels, setChannels] = useState([]);
+  const { listChannels, createChannelByType, deleteChannel } = useChat();
+
+  // Load public channels
+  const loadPublicChannels = async () => {
+    try {
+      const response = await listChannels({
+        type: ChatChannelType.Public,
+        limit: 20,
+        sort: 'DESC',
+        orderBy: 'lastMessageAt'
+      });
+
+      setChannels(response.data);
+      console.log(`Found ${response.count} channels`);
+    } catch (error) {
+      console.error('Failed to load channels:', error);
+    }
+  };
+
+  // Create a support channel
+  const createSupportChannel = async (userId: string) => {
+    try {
+      const channel = await createChannelByType(ChatChannelType.StaffToUser, {
+        userId
+      });
+
+      console.log('Support channel created:', channel.id);
+      return channel;
+    } catch (error) {
+      console.error('Failed to create support channel:', error);
+    }
+  };
+
+  // Create a direct message channel
+  const createDirectMessage = async (userIds: string[]) => {
+    try {
+      const channel = await createChannelByType(ChatChannelType.PeerToPeer, {
+        accesses: userIds
+      });
+
+      console.log('DM channel created:', channel.id);
+      return channel;
+    } catch (error) {
+      console.error('Failed to create DM channel:', error);
+    }
+  };
+
+  // Delete a channel
+  const removeChannel = async (channelId: string) => {
+    try {
+      await deleteChannel(channelId);
+      console.log('Channel deleted');
+      loadPublicChannels(); // Refresh list
+    } catch (error) {
+      console.error('Failed to delete channel:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadPublicChannels();
+  }, []);
+
+  return (
+    <div>
+      <h3>Chat Channels</h3>
+      <button onClick={loadPublicChannels}>Refresh Channels</button>
+      <button onClick={() => createSupportChannel('user-123')}>
+        Create Support Channel
+      </button>
+      <button onClick={() => createDirectMessage(['user-1', 'user-2'])}>
+        Create DM
+      </button>
+
+      <ul>
+        {channels.map((channel) => (
+          <li key={channel._id}>
+            <span>{channel.id}</span>
+            {channel.unreadCountRecipient > 0 && (
+              <span className="badge">{channel.unreadCountRecipient}</span>
+            )}
+            <button onClick={() => removeChannel(channel._id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+**Message Operations Example:**
+
+```tsx
+import { useChat } from '@emd-cloud/react-components';
+import { useState, useEffect } from 'react';
+
+const ChatConversation = ({ channelId }: { channelId: string }) => {
+  const [messages, setMessages] = useState([]);
+  const [messageText, setMessageText] = useState('');
+  const { sendMessage, listMessages, deleteMessage, getUnreadCount } = useChat();
+
+  // Load messages
+  const loadMessages = async () => {
+    try {
+      const response = await listMessages(channelId, {
+        limit: 50,
+        page: 0,
+        orderBy: 'createdAt',
+        sort: 'DESC'
+      });
+
+      setMessages(response.data.reverse()); // Show oldest first
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  };
+
+  // Send a text message
+  const handleSendMessage = async () => {
+    if (!messageText.trim()) return;
+
+    try {
+      const message = await sendMessage(channelId, {
+        message: messageText
+      });
+
+      setMessages(prev => [...prev, message]);
+      setMessageText('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
+  // Send message with attachments
+  const sendMessageWithFiles = async (fileIds: string[]) => {
+    try {
+      const message = await sendMessage(channelId, {
+        message: 'Sent some files',
+        attaches: fileIds.map(id => ({
+          type: 'file',
+          attach: id,
+          name: `file-${id}`
+        }))
+      });
+
+      setMessages(prev => [...prev, message]);
+    } catch (error) {
+      console.error('Failed to send message with files:', error);
+    }
+  };
+
+  // Delete a message
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteMessage(channelId, messageId);
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+    }
+  };
+
+  // Check unread count and mark as read
+  const markAsRead = async () => {
+    try {
+      const counts = await getUnreadCount(channelId, {
+        cleanupUnreaded: true // Mark as read
+      });
+
+      console.log('Unread cleared:', counts);
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadMessages();
+    markAsRead();
+  }, [channelId]);
+
+  return (
+    <div>
+      <h3>Conversation</h3>
+
+      <div className="messages">
+        {messages.map((message) => (
+          <div key={message._id} className="message">
+            <p>{message.message}</p>
+            {message.attaches?.map((attach) => (
+              <div key={attach._id}>
+                <a href={`/files/${attach.attach}`}>{attach.name}</a>
+              </div>
+            ))}
+            <button onClick={() => handleDeleteMessage(message._id)}>
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="input">
+        <input
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Type a message..."
+        />
+        <button onClick={handleSendMessage}>Send</button>
+      </div>
+    </div>
+  );
+};
+```
+
+**Search and Filtering Example:**
+
+```tsx
+import { useChat, ChatChannelType } from '@emd-cloud/react-components';
+import { useState } from 'react';
+
+const ChatSearch = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const { listChannels, listMessages } = useChat();
+
+  // Search channels
+  const searchChannels = async () => {
+    try {
+      const response = await listChannels({
+        type: ChatChannelType.Public,
+        search: searchQuery,
+        limit: 20
+      });
+
+      setResults(response.data);
+      console.log(`Found ${response.count} matching channels`);
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+  };
+
+  // Search messages in a channel
+  const searchMessages = async (channelId: string) => {
+    try {
+      const response = await listMessages(channelId, {
+        search: searchQuery,
+        limit: 100
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Message search failed:', error);
+      return [];
+    }
+  };
+
+  // Get unread chats only
+  const getUnreadChats = async () => {
+    try {
+      const response = await listChannels({
+        type: ChatChannelType.StaffToUser,
+        unreadedChats: true,
+        limit: 50
+      });
+
+      setResults(response.data);
+      console.log(`${response.count} unread chats`);
+    } catch (error) {
+      console.error('Failed to get unread chats:', error);
+    }
+  };
+
+  return (
+    <div>
+      <input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search channels..."
+      />
+      <button onClick={searchChannels}>Search Channels</button>
+      <button onClick={getUnreadChats}>Show Unread</button>
+
+      <ul>
+        {results.map((channel) => (
+          <li key={channel._id}>
+            {channel.id}
+            {channel.unreadCountRecipient > 0 && (
+              <span> ({channel.unreadCountRecipient} unread)</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+<br>
+
+#### Hook: `useChatWebSocket`
+
+**Description:**
+
+The `useChatWebSocket` hook provides real-time chat messaging functionality via WebSocket connection using the EMD Cloud SDK. It implements the Pusher WebSocket protocol for live message updates, connection management, channel subscriptions, and event handling. The hook offers automatic reconnection, connection state tracking, and React-friendly lifecycle management with automatic cleanup.
+
+**Available Methods & Properties:**
+
+- `connect()` (function): Connect to the WebSocket server
+- `disconnect()` (function): Disconnect from the WebSocket server
+- `subscribeToChannel(channelId, chatId?)` (function): Subscribe to a chat channel
+- `unsubscribeFromChannel(channelId)` (function): Unsubscribe from a channel
+- `subscribeToSupport()` (function): Subscribe to support channel (staff only)
+- `setCallbacks(callbacks)` (function): Set or update event callbacks
+- `getConnectionState()` (function): Get current connection state
+- `getSubscribedChannels()` (function): Get list of subscribed channels
+- `connectionState` (property): Reactive connection state
+- `isConnected` (property): Boolean indicating if connected
+
+**Key Features:**
+
+- **Real-time Messaging**: Receive messages instantly via WebSocket
+- **Auto-reconnect**: Automatic reconnection with exponential backoff
+- **Connection Management**: Connect, disconnect, and track connection state
+- **Channel Subscriptions**: Subscribe/unsubscribe to multiple channels
+- **Event Callbacks**: Handle message received, deleted, and connection state changes
+- **Auto-cleanup**: Automatic disconnect on component unmount
+- **Type Safety**: Full TypeScript support for all events
+- **Support Integration**: Subscribe to support channel for staff notifications
+
+**Basic WebSocket Connection Example:**
+
+```tsx
+import { useChatWebSocket, ConnectionState } from '@emd-cloud/react-components';
+import { useEffect, useState } from 'react';
+
+const ChatComponent = () => {
+  const [messages, setMessages] = useState([]);
+
+  const {
+    connect,
+    disconnect,
+    subscribeToChannel,
+    connectionState,
+    isConnected
+  } = useChatWebSocket({
+    autoConnect: true, // Connect automatically on mount
+    autoReconnect: true,
+    maxReconnectAttempts: 10,
+    callbacks: {
+      onMessageReceived: (message) => {
+        console.log('New message:', message);
+        setMessages(prev => [...prev, message]);
+      },
+      onMessageDeleted: (data) => {
+        console.log('Message deleted:', data._id);
+        setMessages(prev => prev.filter(m => m._id !== data._id));
+      },
+      onConnectionStateChange: (state) => {
+        console.log('Connection state:', state);
+      },
+      onError: (error) => {
+        console.error('WebSocket error:', error);
+      }
+    }
+  });
+
+  // Subscribe to a channel when connected
+  useEffect(() => {
+    if (isConnected) {
+      subscribeToChannel('public-general')
+        .then(() => console.log('Subscribed to channel'))
+        .catch((error) => console.error('Subscription failed:', error));
+    }
+  }, [isConnected]);
+
+  return (
+    <div>
+      <div className="status">
+        <p>Status: {connectionState}</p>
+        {!isConnected && <button onClick={connect}>Connect</button>}
+        {isConnected && <button onClick={disconnect}>Disconnect</button>}
+      </div>
+
+      <div className="messages">
+        {messages.map((msg) => (
+          <div key={msg._id}>
+            <strong>{msg.user}:</strong> {msg.message}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+**Advanced Channel Management Example:**
+
+```tsx
+import { useChatWebSocket, useChat } from '@emd-cloud/react-components';
+import { useEffect, useState } from 'react';
+
+const MultiChannelChat = () => {
+  const [activeChannels, setActiveChannels] = useState<string[]>([]);
+  const [messagesByChannel, setMessagesByChannel] = useState<Record<string, any[]>>({});
+  const { listChannels, sendMessage } = useChat();
+
+  const {
+    connect,
+    subscribeToChannel,
+    unsubscribeFromChannel,
+    setCallbacks,
+    connectionState,
+    isConnected,
+    getSubscribedChannels
+  } = useChatWebSocket({
+    autoConnect: false, // Manual connection control
+    autoReconnect: true,
+    reconnectDelay: 1000,
+    maxReconnectDelay: 30000
+  });
+
+  // Set up callbacks
+  useEffect(() => {
+    setCallbacks({
+      onMessageReceived: (message) => {
+        const channelId = typeof message.channel === 'string'
+          ? message.channel
+          : message.channel.id;
+
+        setMessagesByChannel(prev => ({
+          ...prev,
+          [channelId]: [...(prev[channelId] || []), message]
+        }));
+      },
+      onMessageDeleted: (data) => {
+        setMessagesByChannel(prev => {
+          const updated = { ...prev };
+          if (updated[data.channel]) {
+            updated[data.channel] = updated[data.channel].filter(
+              m => m._id !== data._id
+            );
+          }
+          return updated;
+        });
+      }
+    });
+  }, []);
+
+  // Load and subscribe to channels
+  const loadAndSubscribeToChannels = async () => {
+    try {
+      if (!isConnected) {
+        await connect();
+      }
+
+      const response = await listChannels({
+        type: 'public' as any,
+        limit: 10
+      });
+
+      const channelIds = response.data.map(ch => ch.id);
+      setActiveChannels(channelIds);
+
+      // Subscribe to all channels
+      for (const channelId of channelIds) {
+        await subscribeToChannel(channelId);
+      }
+
+      console.log(`Subscribed to ${channelIds.length} channels`);
+    } catch (error) {
+      console.error('Failed to load channels:', error);
+    }
+  };
+
+  // Join a specific channel
+  const joinChannel = async (channelId: string) => {
+    try {
+      if (!isConnected) {
+        await connect();
+      }
+
+      await subscribeToChannel(channelId);
+      setActiveChannels(prev => [...prev, channelId]);
+      console.log(`Joined channel: ${channelId}`);
+    } catch (error) {
+      console.error('Failed to join channel:', error);
+    }
+  };
+
+  // Leave a channel
+  const leaveChannel = (channelId: string) => {
+    unsubscribeFromChannel(channelId);
+    setActiveChannels(prev => prev.filter(id => id !== channelId));
+    console.log(`Left channel: ${channelId}`);
+  };
+
+  // Send message to active channel
+  const sendToChannel = async (channelId: string, text: string) => {
+    try {
+      await sendMessage(channelId, { message: text });
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
+  return (
+    <div>
+      <div className="header">
+        <p>Connection: {connectionState}</p>
+        <p>Channels: {activeChannels.length}</p>
+        <button onClick={loadAndSubscribeToChannels}>
+          Load Channels
+        </button>
+      </div>
+
+      <div className="channels">
+        {activeChannels.map((channelId) => (
+          <div key={channelId} className="channel">
+            <h4>{channelId}</h4>
+            <button onClick={() => leaveChannel(channelId)}>Leave</button>
+
+            <div className="messages">
+              {(messagesByChannel[channelId] || []).map((msg) => (
+                <div key={msg._id}>{msg.message}</div>
+              ))}
+            </div>
+
+            <input
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  sendToChannel(channelId, e.currentTarget.value);
+                  e.currentTarget.value = '';
+                }
+              }}
+              placeholder="Type a message..."
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+**Support Channel Integration Example:**
+
+```tsx
+import { useChatWebSocket } from '@emd-cloud/react-components';
+import { useState, useEffect } from 'react';
+
+const StaffSupportDashboard = () => {
+  const [supportCount, setSupportCount] = useState(0);
+  const [supportChannels, setSupportChannels] = useState([]);
+
+  const {
+    connect,
+    subscribeToSupport,
+    subscribeToChannel,
+    setCallbacks,
+    isConnected
+  } = useChatWebSocket({
+    autoConnect: true
+  });
+
+  useEffect(() => {
+    // Set up support-specific callbacks
+    setCallbacks({
+      onSupportCountUpdated: (data) => {
+        console.log('Unread support messages:', data.count);
+        setSupportCount(data.count);
+      },
+      onSupportChannelUpdated: (channel) => {
+        console.log('Support channel updated:', channel);
+        setSupportChannels(prev => {
+          const index = prev.findIndex(ch => ch._id === channel._id);
+          if (index >= 0) {
+            const updated = [...prev];
+            updated[index] = channel;
+            return updated;
+          }
+          return [...prev, channel];
+        });
+      },
+      onMessageReceived: (message) => {
+        console.log('New support message:', message);
+        // Handle new message in support channel
+      }
+    });
+  }, []);
+
+  // Subscribe to support channel when connected
+  useEffect(() => {
+    if (isConnected) {
+      subscribeToSupport()
+        .then(() => console.log('Subscribed to support channel'))
+        .catch((error) => console.error('Support subscription failed:', error));
+    }
+  }, [isConnected]);
+
+  // Subscribe to individual support channels
+  const subscribeToSupportChannel = async (channelId: string) => {
+    try {
+      await subscribeToChannel(channelId, channelId);
+      console.log(`Subscribed to support channel: ${channelId}`);
+    } catch (error) {
+      console.error('Failed to subscribe to support channel:', error);
+    }
+  };
+
+  return (
+    <div>
+      <h3>Staff Support Dashboard</h3>
+      <div className="stats">
+        <p>Unread Support Messages: {supportCount}</p>
+        <p>Active Support Channels: {supportChannels.length}</p>
+      </div>
+
+      <div className="support-channels">
+        {supportChannels.map((channel) => (
+          <div key={channel._id} className="support-channel">
+            <h4>{channel.id}</h4>
+            <p>Unread: {channel.unreadCountCreator || 0}</p>
+            <p>Resolved: {channel.resolved ? 'Yes' : 'No'}</p>
+            <button onClick={() => subscribeToSupportChannel(channel.id)}>
+              Join Channel
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+**Connection State Management Example:**
+
+```tsx
+import { useChatWebSocket, ConnectionState } from '@emd-cloud/react-components';
+import { useEffect, useState } from 'react';
+
+const ConnectionMonitor = () => {
+  const [connectionHistory, setConnectionHistory] = useState<string[]>([]);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+
+  const {
+    connect,
+    disconnect,
+    connectionState,
+    isConnected,
+    getConnectionState
+  } = useChatWebSocket({
+    autoConnect: false,
+    autoReconnect: true,
+    maxReconnectAttempts: 5,
+    reconnectDelay: 2000,
+    callbacks: {
+      onConnectionStateChange: (state) => {
+        const timestamp = new Date().toLocaleTimeString();
+        setConnectionHistory(prev => [
+          ...prev,
+          `${timestamp}: ${state}`
+        ]);
+
+        if (state === ConnectionState.Connecting) {
+          setReconnectAttempts(prev => prev + 1);
+        } else if (state === ConnectionState.Connected) {
+          setReconnectAttempts(0);
+        }
+      },
+      onError: (error) => {
+        console.error('Connection error:', error.message);
+      }
+    }
+  });
+
+  // Manual connection control
+  const handleConnect = async () => {
+    try {
+      await connect();
+      console.log('Connected successfully');
+    } catch (error) {
+      console.error('Connection failed:', error);
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+    console.log('Disconnected');
+  };
+
+  // Monitor connection state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentState = getConnectionState();
+      console.log('Current state:', currentState);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div>
+      <h3>WebSocket Connection Monitor</h3>
+
+      <div className="status">
+        <p>State: <strong>{connectionState}</strong></p>
+        <p>Connected: {isConnected ? 'Yes' : 'No'}</p>
+        <p>Reconnect Attempts: {reconnectAttempts}</p>
+      </div>
+
+      <div className="controls">
+        <button onClick={handleConnect} disabled={isConnected}>
+          Connect
+        </button>
+        <button onClick={handleDisconnect} disabled={!isConnected}>
+          Disconnect
+        </button>
+      </div>
+
+      <div className="history">
+        <h4>Connection History</h4>
+        <ul>
+          {connectionHistory.map((entry, index) => (
+            <li key={index}>{entry}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

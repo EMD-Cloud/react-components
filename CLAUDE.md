@@ -29,7 +29,7 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 ### Project Structure
 - `src/` - Source code
   - `components/` - React components (ApplicationProvider)
-  - `hooks/` - Custom React hooks (useAuth, useUploader, useDropzone, useDatabase, useWebhook, useUserInteraction)
+  - `hooks/` - Custom React hooks (useAuth, useUploader, useDropzone, useDatabase, useWebhook, useUserInteraction, useChat, useChatWebSocket)
   - `tools/` - Utility modules (uploader.ts)
   - `stories/` - Storybook stories
 - `tests/` - Test files organized by feature
@@ -44,7 +44,7 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 - **Vite**: Used for testing and Storybook
 
 ### Key Dependencies
-- `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.9.0+)
+- `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.11.0+ for chat support)
 - `tus-js-client` - Peer dependency for resumable file upload protocol
 - `uuid` - Peer dependency for generating unique identifiers
 - `react` & `react-dom` - Peer dependencies (v16.8+ through v19)
@@ -52,15 +52,16 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 
 ### Main Exports
 The library exports:
-- **Hooks**: `useAuth` (comprehensive auth with SDK integration), `useUploader`, `useDropzone`, `useDatabase` (database CRUD operations), `useWebhook` (webhook integration), `useUserInteraction` (social accounts, user management, activity tracking)
+- **Hooks**: `useAuth` (comprehensive auth with SDK integration), `useUploader`, `useDropzone`, `useDatabase` (database CRUD operations), `useWebhook` (webhook integration), `useUserInteraction` (social accounts, user management, activity tracking), `useChat` (chat REST API operations), `useChatWebSocket` (real-time chat messaging)
 - **Components**: `ApplicationProvider` (manages SDK instance and application state)
-- **Types**: All database, webhook, and user interaction types from @emd-cloud/sdk
+- **Types**: All database, webhook, user interaction, and chat types from @emd-cloud/sdk
 
 ### SDK Integration Architecture
 - **ApplicationProvider** automatically initializes and manages the EMD Cloud SDK instance
 - **useAuth** hook uses SDK methods instead of direct API calls
 - **useUploader** hook uses SDK's uploader instance for file uploads with TUS protocol
-- **useDatabase**, **useWebhook**, and **useUserInteraction** all delegate to SDK
+- **useDatabase**, **useWebhook**, **useUserInteraction**, and **useChat** all delegate to SDK
+- **useChatWebSocket** creates WebSocket instances via SDK for real-time messaging
 - Graceful fallback when SDK is not installed
 - Dynamic SDK loading to avoid runtime errors
 - Centralized token management through SDK
@@ -110,8 +111,23 @@ The library exports:
 - **Pagination & Filtering**: Search, filter by status, and paginate through user lists
 - **Type Safety**: Full TypeScript support with proper typing for all operations
 
+### Chat Features Available
+- **REST API Operations**: Complete chat channel and message management via `useChat` hook
+- **Channel Management**: Create, list, update, and delete chat channels
+- **Channel Types**: Support for public, staff-to-user, peer-to-peer, and staff channels
+- **Message Operations**: Send, list, and delete messages with attachment support
+- **Unread Tracking**: Get and clear unread message counts for channels
+- **Real-time Messaging**: WebSocket integration via `useChatWebSocket` hook
+- **WebSocket Features**: Auto-reconnect, connection state tracking, event callbacks
+- **Channel Subscriptions**: Subscribe/unsubscribe to channels for live updates
+- **Support Integration**: Subscribe to support channel for staff notifications
+- **Event Handling**: Callbacks for message received, deleted, connection state changes
+- **Type Safety**: Full TypeScript support for all chat operations
+
 ### Testing Coverage
-- Complete test coverage for all hooks (75 tests passing)
+- Complete test coverage for all hooks (115+ tests passing)
+- Chat REST API: 19 test cases covering all channel and message operations
+- Chat WebSocket: 21 test cases covering connection, subscriptions, and event handling
 - User interaction: 19 test cases covering social accounts, ping, and user management
 - Database operations: 14 test cases covering all CRUD operations
 - Webhook operations: 13 test cases covering all HTTP methods
@@ -346,5 +362,219 @@ const MyComponent = () => {
   }
 
   return <div>User interaction component</div>
+}
+```
+
+### useChat Hook
+```tsx
+import { useChat, ChatChannelType } from '@emd-cloud/react-components'
+
+const MyComponent = () => {
+  const {
+    listChannels,
+    createChannelByType,
+    sendMessage,
+    listMessages,
+    getUnreadCount
+  } = useChat()
+
+  // List public channels
+  const loadChannels = async () => {
+    const channels = await listChannels({
+      type: ChatChannelType.Public,
+      limit: 20,
+      search: 'general'
+    })
+    console.log('Channels:', channels.data)
+  }
+
+  // Create a support channel
+  const createSupportChannel = async (userId: string) => {
+    const channel = await createChannelByType(ChatChannelType.StaffToUser, {
+      userId
+    })
+    console.log('Created channel:', channel.id)
+  }
+
+  // Create a peer-to-peer chat
+  const createDirectMessage = async (userIds: string[]) => {
+    const channel = await createChannelByType(ChatChannelType.PeerToPeer, {
+      accesses: userIds
+    })
+    return channel
+  }
+
+  // Send a text message
+  const sendTextMessage = async (channelId: string, text: string) => {
+    const message = await sendMessage(channelId, {
+      message: text
+    })
+    console.log('Message sent:', message._id)
+  }
+
+  // Send a message with attachments
+  const sendMessageWithFiles = async (channelId: string) => {
+    const message = await sendMessage(channelId, {
+      message: 'Check out these files!',
+      attaches: [
+        { type: 'image', attach: 'image-id', name: 'screenshot.png' },
+        { type: 'file', attach: 'file-id', name: 'report.pdf' }
+      ]
+    })
+    return message
+  }
+
+  // Load messages
+  const loadMessages = async (channelId: string) => {
+    const messages = await listMessages(channelId, {
+      limit: 50,
+      page: 0,
+      orderBy: 'createdAt',
+      sort: 'DESC'
+    })
+    console.log(`${messages.count} messages:`, messages.data)
+  }
+
+  // Get unread counts
+  const checkUnread = async (channelId: string) => {
+    const counts = await getUnreadCount(channelId, {
+      cleanupUnreaded: true // Mark as read
+    })
+    console.log(`Creator: ${counts.creator}, Recipient: ${counts.recipient}`)
+  }
+
+  return <div>Chat operations component</div>
+}
+```
+
+### useChatWebSocket Hook
+```tsx
+import { useChatWebSocket, ConnectionState } from '@emd-cloud/react-components'
+import { useEffect, useState } from 'react'
+
+const MyChat = () => {
+  const [messages, setMessages] = useState([])
+  const [channels, setChannels] = useState([])
+
+  const {
+    connect,
+    disconnect,
+    subscribeToChannel,
+    unsubscribeFromChannel,
+    subscribeToSupport,
+    setCallbacks,
+    connectionState,
+    isConnected
+  } = useChatWebSocket({
+    autoConnect: true, // Connect automatically on mount
+    autoReconnect: true,
+    maxReconnectAttempts: 10,
+    callbacks: {
+      onMessageReceived: (message) => {
+        console.log('New message:', message)
+        setMessages(prev => [...prev, message])
+      },
+      onMessageDeleted: (data) => {
+        console.log('Message deleted:', data._id)
+        setMessages(prev => prev.filter(m => m._id !== data._id))
+      },
+      onSupportCountUpdated: (data) => {
+        console.log('Support unread count:', data.count)
+      },
+      onSupportChannelUpdated: (channel) => {
+        console.log('Support channel updated:', channel)
+      },
+      onConnectionStateChange: (state) => {
+        console.log('Connection state:', state)
+      },
+      onError: (error) => {
+        console.error('WebSocket error:', error)
+      }
+    }
+  })
+
+  // Subscribe to channels when connected
+  useEffect(() => {
+    if (isConnected && channels.length > 0) {
+      channels.forEach(channelId => {
+        subscribeToChannel(channelId).catch(console.error)
+      })
+    }
+  }, [isConnected, channels])
+
+  // Join a channel
+  const joinChannel = async (channelId: string) => {
+    if (!isConnected) {
+      await connect()
+    }
+    await subscribeToChannel(channelId)
+    setChannels(prev => [...prev, channelId])
+  }
+
+  // Leave a channel
+  const leaveChannel = (channelId: string) => {
+    unsubscribeFromChannel(channelId)
+    setChannels(prev => prev.filter(id => id !== channelId))
+  }
+
+  // Enable support notifications (staff only)
+  const enableSupportNotifications = async () => {
+    if (!isConnected) {
+      await connect()
+    }
+    await subscribeToSupport()
+  }
+
+  // Update callbacks dynamically
+  const addMessageHandler = (handler: (msg: any) => void) => {
+    setCallbacks({
+      onMessageReceived: handler
+    })
+  }
+
+  return (
+    <div>
+      <div>
+        <p>Connection: {connectionState}</p>
+        {!isConnected && <button onClick={connect}>Connect</button>}
+        {isConnected && <button onClick={disconnect}>Disconnect</button>}
+      </div>
+
+      <div>
+        <input
+          type="text"
+          placeholder="Channel ID"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              joinChannel(e.currentTarget.value)
+              e.currentTarget.value = ''
+            }
+          }}
+        />
+        <button onClick={enableSupportNotifications}>
+          Enable Support Notifications
+        </button>
+      </div>
+
+      <div>
+        <h3>Active Channels</h3>
+        {channels.map(channelId => (
+          <div key={channelId}>
+            <span>{channelId}</span>
+            <button onClick={() => leaveChannel(channelId)}>Leave</button>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <h3>Messages</h3>
+        {messages.map(msg => (
+          <div key={msg._id}>
+            <strong>{msg.user}:</strong> {msg.message}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 ```
