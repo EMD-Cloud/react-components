@@ -6,6 +6,7 @@ import { ApplicationActionType, ApplicationDataType } from './state-manager'
 
 export const ApplicationContext = createContext<ApplicationDataType>({
   apiUrl: '',
+  websocketUrl: '',
   app: '',
   tokenType: '',
   user: null,

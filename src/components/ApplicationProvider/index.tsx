@@ -13,6 +13,7 @@ import reducer, {
 
 interface IApplicationProviderProps {
   apiUrl?: string
+  websocketUrl?: string
   app: string
   tokenType?: string
   authToken?: string
@@ -23,6 +24,7 @@ interface IApplicationProviderProps {
 const ApplicationProvider = ({
   app,
   apiUrl = 'https://api.emd.one',
+  websocketUrl = 'wss://ws.emd.one',
   tokenType = 'token',
   authToken,
   children,
@@ -37,6 +39,7 @@ const ApplicationProvider = ({
     ) => ApplicationDataType
   >(reducer, {
     apiUrl,
+    websocketUrl,
     app,
     tokenType,
     user: null,
