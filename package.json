@@ -42,7 +42,7 @@
     "url": "https://github.com/EMD-Cloud/react-components/issues"
   },
   "peerDependencies": {
-    "@emd-cloud/sdk": "^1.11.0",
+    "@emd-cloud/sdk": "^1.11.1",
     "react": "^16.8.0 || ^17 || ^18 || ^19",
     "react-dom": "^16.8.0 || ^17 || ^18 || ^19",
     "tus-js-client": "^4.3.1",
