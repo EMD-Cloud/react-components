@@ -56,6 +56,7 @@ const ApplicationProvider = ({
         environment: AppEnvironment.Client,
         appId: app,
         apiUrl,
+        websocketUrl,
         ...(authToken && { apiToken: authToken }),
       })
 
@@ -75,7 +76,7 @@ const ApplicationProvider = ({
       console.error('@emd-cloud/sdk initialization failed:', error)
       setSdkReady(true)
     }
-  }, [app, apiUrl, authToken])
+  }, [app, apiUrl, websocketUrl, authToken])
 
   if (!sdkReady) {
     return loadingComponent

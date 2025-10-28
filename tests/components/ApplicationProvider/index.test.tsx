@@ -97,6 +97,7 @@ describe('ApplicationProvider Tests', () => {
       environment: 'client',
       appId: 'test-app',
       apiUrl: 'https://api.emd.one',
+      websocketUrl: 'wss://ws.emd.one',
       apiToken: 'test-token'
     })
   })
@@ -115,7 +116,8 @@ describe('ApplicationProvider Tests', () => {
     expect(mockEmdCloudConstructor).toHaveBeenCalledWith({
       environment: 'client',
       appId: 'test-app',
-      apiUrl: 'https://api.emd.one'
+      apiUrl: 'https://api.emd.one',
+      websocketUrl: 'wss://ws.emd.one'
     })
   })
 
@@ -180,6 +182,7 @@ describe('ApplicationProvider Tests', () => {
       environment: 'client',
       appId: 'test-app',
       apiUrl: 'https://api.emd.one',
+      websocketUrl: 'wss://ws.emd.one',
       apiToken: 'token1'
     })
 
@@ -195,6 +198,7 @@ describe('ApplicationProvider Tests', () => {
         environment: 'client',
         appId: 'test-app',
         apiUrl: 'https://api.emd.one',
+        websocketUrl: 'wss://ws.emd.one',
         apiToken: 'token2'
       })
     })
