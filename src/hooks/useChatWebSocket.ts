@@ -1,15 +1,12 @@
 // ** React Imports
-import { useContext, useMemo, useCallback, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 
 // ** Source code Imports
 import { ApplicationContext } from 'src/components/ApplicationProvider/context'
 
+import type { ChatWebSocketCallbacks, ChatWebSocketOptions, } from '@emd-cloud/sdk'
 // ** Types
-import type {
-  ChatWebSocketOptions,
-  ChatWebSocketCallbacks,
-  ConnectionState,
-} from '@emd-cloud/sdk'
+import { ConnectionState } from '@emd-cloud/sdk'
 
 export interface UseChatWebSocketReturn {
   /**
@@ -61,16 +58,6 @@ export interface UseChatWebSocketReturn {
    * @returns Set of subscribed channel names
    */
   getSubscribedChannels: () => Set<string>
-
-  /**
-   * Current connection state (reactive)
-   */
-  connectionState: ConnectionState
-
-  /**
-   * Whether the WebSocket is currently connected
-   */
-  isConnected: boolean
 }
 
 export interface UseChatWebSocketOptions extends Partial<ChatWebSocketOptions> {
@@ -141,32 +128,17 @@ const useChatWebSocket = (
     ...wsOptions
   } = options
 
-  const [connectionState, setConnectionState] = useState<ConnectionState>(
-    'disconnected' as ConnectionState
-  )
-
-  // Create WebSocket instance
   const chatWebSocket = useMemo(() => {
     if (!appData.sdkInstance) {
       return null
     }
 
-    // Create ChatWebSocket instance with callbacks that update React state
-    const ws = appData.sdkInstance.chatWebSocket({
+    return appData.sdkInstance.chatWebSocket({
       ...wsOptions,
       callbacks: {
         ...wsOptions.callbacks,
-        onConnectionStateChange: (state) => {
-          setConnectionState(state)
-          // Call user's callback if provided
-          if (wsOptions.callbacks?.onConnectionStateChange) {
-            wsOptions.callbacks.onConnectionStateChange(state)
-          }
-        },
       },
     })
-
-    return ws
   }, [appData.sdkInstance, wsOptions])
 
   const connect = useCallback(async (): Promise<void> => {
@@ -252,7 +224,7 @@ const useChatWebSocket = (
 
   const getConnectionState = useCallback((): ConnectionState => {
     if (!chatWebSocket) {
-      return 'disconnected' as ConnectionState
+      return ConnectionState.Disconnected
     }
 
     return chatWebSocket.getConnectionState()
@@ -284,8 +256,6 @@ const useChatWebSocket = (
     }
   }, [autoDisconnect, chatWebSocket])
 
-  const isConnected = connectionState === ('connected' as ConnectionState)
-
   return {
     connect,
     disconnect,
@@ -295,8 +265,6 @@ const useChatWebSocket = (
     setCallbacks,
     getConnectionState,
     getSubscribedChannels,
-    connectionState,
-    isConnected,
   }
 }
 

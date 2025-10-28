@@ -1,5 +1,5 @@
 // Import types from SDK instead of duplicating
-import type { EmdCloud, UserData, AppOptionsType } from '@emd-cloud/sdk'
+import type { EmdCloud, UserData } from '@emd-cloud/sdk'
 
 export type UserType = UserData
 
