@@ -1,5 +1,5 @@
 // ** React Imports
-import { useCallback, useContext, useEffect, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 // ** Source code Imports
 import { ApplicationContext } from 'src/components/ApplicationProvider/context'
@@ -58,6 +58,16 @@ export interface UseChatWebSocketReturn {
    * @returns Set of subscribed channel names
    */
   getSubscribedChannels: () => Set<string>
+
+  /**
+   * Current connection state (reactive)
+   */
+  connectionState: ConnectionState
+
+  /**
+   * Whether the WebSocket is currently connected
+   */
+  isConnected: boolean
 }
 
 export interface UseChatWebSocketOptions extends Partial<ChatWebSocketOptions> {
@@ -125,21 +135,71 @@ const useChatWebSocket = (
   const {
     autoConnect = false,
     autoDisconnect = true,
-    ...wsOptions
+    callbacks,
+    authToken,
+    userData,
+    autoReconnect,
+    maxReconnectAttempts,
+    reconnectDelay,
+    maxReconnectDelay,
+    pingInterval,
   } = options
+
+  const [connectionState, setConnectionState] = useState<ConnectionState>(
+    ConnectionState.Disconnected
+  )
+
+  const callbacksRef = useRef<ChatWebSocketCallbacks | undefined>(callbacks)
+
+  callbacksRef.current = callbacks
 
   const chatWebSocket = useMemo(() => {
     if (!appData.sdkInstance) {
       return null
     }
 
-    return appData.sdkInstance.chatWebSocket({
-      ...wsOptions,
-      callbacks: {
-        ...wsOptions.callbacks,
+    const stableCallbacks: ChatWebSocketCallbacks = {
+      onMessageReceived: (message) => {
+        callbacksRef.current?.onMessageReceived?.(message)
       },
+      onMessageDeleted: (data) => {
+        callbacksRef.current?.onMessageDeleted?.(data)
+      },
+      onSupportCountUpdated: (data) => {
+        callbacksRef.current?.onSupportCountUpdated?.(data)
+      },
+      onSupportChannelUpdated: (channel) => {
+        callbacksRef.current?.onSupportChannelUpdated?.(channel)
+      },
+      onConnectionStateChange: (state) => {
+        setConnectionState(state)
+        callbacksRef.current?.onConnectionStateChange?.(state)
+      },
+      onError: (error) => {
+        callbacksRef.current?.onError?.(error)
+      },
+    }
+
+    return appData.sdkInstance.chatWebSocket({
+      authToken,
+      userData,
+      autoReconnect,
+      maxReconnectAttempts,
+      reconnectDelay,
+      maxReconnectDelay,
+      pingInterval,
+      callbacks: stableCallbacks,
     })
-  }, [appData.sdkInstance, wsOptions])
+  }, [
+    appData.sdkInstance,
+    authToken,
+    userData,
+    autoReconnect,
+    maxReconnectAttempts,
+    reconnectDelay,
+    maxReconnectDelay,
+    pingInterval,
+  ])
 
   const connect = useCallback(async (): Promise<void> => {
     if (!chatWebSocket) {
@@ -148,11 +208,7 @@ const useChatWebSocket = (
       )
     }
 
-    try {
-      await chatWebSocket.connect()
-    } catch (error) {
-      throw error
-    }
+    await chatWebSocket.connect()
   }, [chatWebSocket])
 
   const disconnect = useCallback((): void => {
@@ -173,11 +229,7 @@ const useChatWebSocket = (
         )
       }
 
-      try {
-        await chatWebSocket.subscribeToChannel(channelId, chatId)
-      } catch (error) {
-        throw error
-      }
+      await chatWebSocket.subscribeToChannel(channelId, chatId)
     },
     [chatWebSocket]
   )
@@ -202,11 +254,7 @@ const useChatWebSocket = (
       )
     }
 
-    try {
-      await chatWebSocket.subscribeToSupport()
-    } catch (error) {
-      throw error
-    }
+    await chatWebSocket.subscribeToSupport()
   }, [chatWebSocket])
 
   const setCallbacks = useCallback(
@@ -217,7 +265,7 @@ const useChatWebSocket = (
         )
       }
 
-      chatWebSocket.setCallbacks(callbacks)
+      callbacksRef.current = callbacks
     },
     [chatWebSocket]
   )
@@ -256,6 +304,10 @@ const useChatWebSocket = (
     }
   }, [autoDisconnect, chatWebSocket])
 
+  const isConnected = useMemo(() => {
+    return connectionState === ConnectionState.Connected
+  }, [connectionState])
+
   return {
     connect,
     disconnect,
@@ -265,6 +317,8 @@ const useChatWebSocket = (
     setCallbacks,
     getConnectionState,
     getSubscribedChannels,
+    connectionState,
+    isConnected,
   }
 }
 
