@@ -18,6 +18,7 @@ import type {
   ChatChannelResponse,
   ChatMessageResponse,
   ChatDeleteResponse,
+  ChatMessageListResponse,
   UnreadCountResponse,
   CallOptions,
   ServerError,
@@ -443,7 +444,7 @@ const useChat = (): UseChatReturn => {
       channelId: string,
       options: ChatMessageListOptions = {},
       callOptions: CallOptions = {},
-    ): Promise<ChatListResponse | ChatListResponse['data'] | ServerError> => {
+    ): Promise<ChatMessageListResponse | ChatMessageListResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
