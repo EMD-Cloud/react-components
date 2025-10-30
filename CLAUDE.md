@@ -117,6 +117,8 @@ The library exports:
 - **Channel Types**: Support for public, staff-to-user, peer-to-peer, and staff channels
 - **Message Operations**: Send, list, and delete messages with attachment support
 - **Unread Tracking**: Get and clear unread message counts for channels
+- **CallOptions Support**: All methods support `CallOptions` for authentication control (user vs server tokens)
+- **Response Control**: Access full response objects with `ignoreFormatResponse` for debugging and error handling
 - **Real-time Messaging**: WebSocket integration via `useChatWebSocket` hook
 - **WebSocket Features**: Auto-reconnect, connection state tracking, event callbacks
 - **Channel Subscriptions**: Subscribe/unsubscribe to channels for live updates
@@ -125,8 +127,8 @@ The library exports:
 - **Type Safety**: Full TypeScript support for all chat operations
 
 ### Testing Coverage
-- Complete test coverage for all hooks (115+ tests passing)
-- Chat REST API: 19 test cases covering all channel and message operations
+- Complete test coverage for all hooks (125+ tests passing)
+- Chat REST API: 29 test cases covering all channel and message operations, CallOptions, and response format control
 - Chat WebSocket: 21 test cases covering connection, subscriptions, and event handling
 - User interaction: 19 test cases covering social accounts, ping, and user management
 - Database operations: 14 test cases covering all CRUD operations
@@ -378,7 +380,7 @@ const MyComponent = () => {
     getUnreadCount
   } = useChat()
 
-  // List public channels
+  // List public channels (default: returns unwrapped data)
   const loadChannels = async () => {
     const channels = await listChannels({
       type: ChatChannelType.Public,
@@ -441,6 +443,30 @@ const MyComponent = () => {
       cleanupUnreaded: true // Mark as read
     })
     console.log(`Creator: ${counts.creator}, Recipient: ${counts.recipient}`)
+  }
+
+  // Use API token for server-side operations
+  const serverSideOperation = async () => {
+    const channels = await listChannels(
+      { limit: 50 },
+      { authType: 'api-token' } // Use server authentication
+    )
+    return channels
+  }
+
+  // Get full response object for error handling
+  const sendWithErrorHandling = async (channelId: string, text: string) => {
+    const response = await sendMessage(
+      channelId,
+      { message: text },
+      { ignoreFormatResponse: true } // Get full response
+    )
+
+    if ('success' in response && response.success) {
+      console.log('Message sent:', response.data)
+    } else if ('error' in response) {
+      console.error('Failed to send:', response.error)
+    }
   }
 
   return <div>Chat operations component</div>

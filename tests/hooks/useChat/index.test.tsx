@@ -29,7 +29,7 @@ const mockSDK = {
 
 // Mock the SDK module
 vi.mock('@emd-cloud/sdk', () => ({
-  EmdCloud: vi.fn(() => mockSDK),
+  EmdCloud: vi.fn(function() { return mockSDK }),
   AppEnvironment: {
     Client: 'client',
     Server: 'server',
@@ -97,7 +97,7 @@ describe('useChat Hook Tests', () => {
       expect(mockSDK.chat.listChannels).toHaveBeenCalledWith({
         type: ChatChannelType.Public,
         limit: 20,
-      })
+      }, {})
     })
 
     it('should list channels with search filter', async () => {
@@ -122,7 +122,7 @@ describe('useChat Hook Tests', () => {
         type: ChatChannelType.Public,
         search: 'general',
         unreadedChats: true,
-      })
+      }, {})
     })
 
     it('should create channel by type (staff-to-user)', async () => {
@@ -141,7 +141,8 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.createChannelByType).toHaveBeenCalledWith(
         ChatChannelType.StaffToUser,
-        { userId: 'user-456' }
+        { userId: 'user-456' },
+        {}
       )
     })
 
@@ -161,7 +162,8 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.createChannelByType).toHaveBeenCalledWith(
         ChatChannelType.PeerToPeer,
-        { accesses: ['user-1', 'user-2'] }
+        { accesses: ['user-1', 'user-2'] },
+        {}
       )
     })
 
@@ -181,7 +183,7 @@ describe('useChat Hook Tests', () => {
       expect(mockSDK.chat.upsertChannel).toHaveBeenCalledWith({
         id: 'new-channel',
         type: ChatChannelType.Public,
-      })
+      }, {})
     })
 
     it('should upsert channel (update)', async () => {
@@ -201,7 +203,7 @@ describe('useChat Hook Tests', () => {
       expect(mockSDK.chat.upsertChannel).toHaveBeenCalledWith({
         _id: 'channel-123',
         resolved: true,
-      })
+      }, {})
     })
 
     it('should get channel details', async () => {
@@ -214,7 +216,7 @@ describe('useChat Hook Tests', () => {
         expect(response).toEqual(mockChannel)
       })
 
-      expect(mockSDK.chat.getChannel).toHaveBeenCalledWith('public-general', {})
+      expect(mockSDK.chat.getChannel).toHaveBeenCalledWith('public-general', {}, {})
     })
 
     it('should get channel with cleanup unreaded', async () => {
@@ -230,7 +232,7 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.getChannel).toHaveBeenCalledWith('public-general', {
         cleanupUnreaded: true,
-      })
+      }, {})
     })
 
     it('should delete channel successfully', async () => {
@@ -244,7 +246,7 @@ describe('useChat Hook Tests', () => {
         expect(response).toEqual(mockResponse)
       })
 
-      expect(mockSDK.chat.deleteChannel).toHaveBeenCalledWith('channel-123')
+      expect(mockSDK.chat.deleteChannel).toHaveBeenCalledWith('channel-123', {})
     })
   })
 
@@ -263,7 +265,7 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.sendMessage).toHaveBeenCalledWith('channel-123', {
         message: 'Hello world!',
-      })
+      }, {})
     })
 
     it('should send message with attachments', async () => {
@@ -295,7 +297,7 @@ describe('useChat Hook Tests', () => {
           { type: 'image', attach: 'image-id', name: 'photo.jpg' },
           { type: 'file', attach: 'file-id', name: 'document.pdf' },
         ],
-      })
+      }, {})
     })
 
     it('should list messages successfully', async () => {
@@ -323,7 +325,7 @@ describe('useChat Hook Tests', () => {
         page: 0,
         orderBy: 'createdAt',
         sort: 'DESC',
-      })
+      }, {})
     })
 
     it('should search messages', async () => {
@@ -344,7 +346,7 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.listMessages).toHaveBeenCalledWith('channel-123', {
         search: 'hello',
-      })
+      }, {})
     })
 
     it('should delete message successfully', async () => {
@@ -363,7 +365,8 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.deleteMessage).toHaveBeenCalledWith(
         'channel-123',
-        'message-123'
+        'message-123',
+        {}
       )
     })
   })
@@ -382,6 +385,7 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.getUnreadCount).toHaveBeenCalledWith(
         'channel-123',
+        {},
         {}
       )
     })
@@ -401,7 +405,212 @@ describe('useChat Hook Tests', () => {
 
       expect(mockSDK.chat.getUnreadCount).toHaveBeenCalledWith('channel-123', {
         cleanupUnreaded: true,
+      }, {})
+    })
+  })
+
+  describe('CallOptions Support', () => {
+    it('should pass callOptions to listChannels', async () => {
+      const mockResponse = {
+        data: [mockChannel],
+        count: 1,
+        pages: 1,
+      }
+      mockSDK.chat.listChannels.mockResolvedValue(mockResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.listChannels(
+          { limit: 20 },
+          { authType: 'api-token' }
+        )
       })
+
+      expect(mockSDK.chat.listChannels).toHaveBeenCalledWith(
+        { limit: 20 },
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to createChannelByType', async () => {
+      mockSDK.chat.createChannelByType.mockResolvedValue(mockChannel)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.createChannelByType(
+          ChatChannelType.StaffToUser,
+          { userId: 'user-123' },
+          { authType: 'api-token' }
+        )
+      })
+
+      expect(mockSDK.chat.createChannelByType).toHaveBeenCalledWith(
+        ChatChannelType.StaffToUser,
+        { userId: 'user-123' },
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to sendMessage', async () => {
+      mockSDK.chat.sendMessage.mockResolvedValue(mockMessage)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.sendMessage(
+          'channel-123',
+          { message: 'Hello' },
+          { authType: 'auth-token' }
+        )
+      })
+
+      expect(mockSDK.chat.sendMessage).toHaveBeenCalledWith(
+        'channel-123',
+        { message: 'Hello' },
+        { authType: 'auth-token' }
+      )
+    })
+
+    it('should pass callOptions to listMessages', async () => {
+      const mockMessagesResponse = {
+        data: [mockMessage],
+        count: 1,
+        pages: 1,
+      }
+      mockSDK.chat.listMessages.mockResolvedValue(mockMessagesResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.listMessages(
+          'channel-123',
+          { limit: 50 },
+          { authType: 'api-token' }
+        )
+      })
+
+      expect(mockSDK.chat.listMessages).toHaveBeenCalledWith(
+        'channel-123',
+        { limit: 50 },
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to getUnreadCount', async () => {
+      const mockCountResponse = { creator: 5, recipient: 3 }
+      mockSDK.chat.getUnreadCount.mockResolvedValue(mockCountResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.getUnreadCount(
+          'channel-123',
+          { cleanupUnreaded: true },
+          { authType: 'auth-token' }
+        )
+      })
+
+      expect(mockSDK.chat.getUnreadCount).toHaveBeenCalledWith(
+        'channel-123',
+        { cleanupUnreaded: true },
+        { authType: 'auth-token' }
+      )
+    })
+
+    it('should return full response with ignoreFormatResponse', async () => {
+      const mockFullResponse = {
+        success: true,
+        data: [mockChannel],
+        count: 1,
+        pages: 1,
+      }
+      mockSDK.chat.listChannels.mockResolvedValue(mockFullResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        const response = await result.current.listChannels(
+          { limit: 20 },
+          { ignoreFormatResponse: true }
+        )
+        expect(response).toEqual(mockFullResponse)
+        expect('success' in response).toBe(true)
+      })
+    })
+
+    it('should return unwrapped data by default', async () => {
+      const mockData = [mockChannel]
+      mockSDK.chat.listChannels.mockResolvedValue(mockData)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        const response = await result.current.listChannels({ limit: 20 })
+        expect(response).toEqual(mockData)
+      })
+
+      expect(mockSDK.chat.listChannels).toHaveBeenCalledWith({ limit: 20 }, {})
+    })
+
+    it('should handle server error with ignoreFormatResponse', async () => {
+      const mockErrorResponse = {
+        success: false,
+        error: 'Unauthorized',
+        status: 401,
+      }
+      mockSDK.chat.sendMessage.mockResolvedValue(mockErrorResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        const response = await result.current.sendMessage(
+          'channel-123',
+          { message: 'Hello' },
+          { ignoreFormatResponse: true }
+        )
+        expect(response).toEqual(mockErrorResponse)
+        expect('success' in response).toBe(true)
+        expect((response as any).success).toBe(false)
+      })
+    })
+
+    it('should pass callOptions to deleteChannel', async () => {
+      const mockDeleteResponse = { success: true }
+      mockSDK.chat.deleteChannel.mockResolvedValue(mockDeleteResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.deleteChannel('channel-123', { authType: 'api-token' })
+      })
+
+      expect(mockSDK.chat.deleteChannel).toHaveBeenCalledWith(
+        'channel-123',
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to deleteMessage', async () => {
+      const mockDeleteResponse = { success: true }
+      mockSDK.chat.deleteMessage.mockResolvedValue(mockDeleteResponse)
+
+      const { result } = renderHook(() => useChat(), { wrapper })
+
+      await act(async () => {
+        await result.current.deleteMessage(
+          'channel-123',
+          'message-123',
+          { authType: 'api-token' }
+        )
+      })
+
+      expect(mockSDK.chat.deleteMessage).toHaveBeenCalledWith(
+        'channel-123',
+        'message-123',
+        { authType: 'api-token' }
+      )
     })
   })
 

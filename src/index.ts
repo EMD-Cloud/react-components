@@ -51,6 +51,9 @@ export type {
   ChatChannelSetting,
   ChatListOptions,
   ChatListResponse,
+  ChatChannelResponse,
+  ChatMessageResponse,
+  ChatDeleteResponse,
   CreateChannelByTypeOptions,
   UpsertChannelOptions,
   GetChannelOptions,
@@ -71,5 +74,6 @@ export type {
   ConnectionStateCallback,
   // Common types
   CallOptions,
-  AuthType
+  AuthType,
+  ServerError
 } from '@emd-cloud/sdk'

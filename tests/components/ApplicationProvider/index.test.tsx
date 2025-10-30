@@ -19,7 +19,7 @@ vi.mock('@emd-cloud/sdk', () => {
     setAuthToken: vi.fn(),
   }
   
-  const mockConstructor = vi.fn(() => mockSDK)
+  const mockConstructor = vi.fn(function() { return mockSDK })
   
   return {
     EmdCloud: mockConstructor,

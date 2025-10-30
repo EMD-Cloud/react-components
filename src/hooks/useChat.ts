@@ -14,18 +14,22 @@ import type {
   SendMessageOptions,
   ChatMessageListOptions,
   GetUnreadCountOptions,
+  ChatListResponse,
+  ChatChannelResponse,
+  ChatMessageResponse,
+  ChatDeleteResponse,
+  UnreadCountResponse,
+  CallOptions,
+  ServerError,
 } from '@emd-cloud/sdk'
-import type { EmdCloud } from '@emd-cloud/sdk'
-
-// Reuse SDK method parameter types to stay in sync with @emd-cloud/sdk
-type SDKChat = EmdCloud['chat']
 
 export interface UseChatReturn {
   /**
    * Lists chat channels with filtering and pagination.
    *
    * @param options - List options including filters and pagination
-   * @returns Promise resolving to channel list with pagination info
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to channel list with pagination info or ServerError
    *
    * @example
    * // Get all public channels
@@ -36,17 +40,35 @@ export interface UseChatReturn {
    *   type: ChatChannelType.StaffToUser,
    *   unreadedChats: true
    * });
+   *
+   * // Use with API token for server-side
+   * const serverChannels = await listChannels(
+   *   { limit: 50 },
+   *   { authType: 'api-token' }
+   * );
+   *
+   * // Get full response object
+   * const response = await listChannels(
+   *   { limit: 20 },
+   *   { ignoreFormatResponse: true }
+   * );
    */
-  listChannels: (
-    options?: ChatListOptions
-  ) => ReturnType<SDKChat['listChannels']>
+  listChannels(
+    options: ChatListOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatListResponse | ServerError>
+  listChannels(
+    options?: ChatListOptions,
+    callOptions?: CallOptions,
+  ): Promise<ChatListResponse['data'] | ServerError>
 
   /**
    * Creates or gets existing chat channel by type.
    *
    * @param type - Channel type (staff-to-user, peer-to-peer, staff)
    * @param options - Options including userId or accesses list
-   * @returns Promise resolving to the channel
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to the channel or ServerError
    *
    * @example
    * // Create staff-to-user chat
@@ -58,17 +80,31 @@ export interface UseChatReturn {
    * const dmChannel = await createChannelByType(ChatChannelType.PeerToPeer, {
    *   accesses: ['user-uuid-1', 'user-uuid-2']
    * });
+   *
+   * // Get full response object
+   * const response = await createChannelByType(
+   *   ChatChannelType.StaffToUser,
+   *   { userId: 'user-uuid' },
+   *   { ignoreFormatResponse: true }
+   * );
    */
-  createChannelByType: (
+  createChannelByType(
     type: ChatChannelType,
-    options?: CreateChannelByTypeOptions
-  ) => ReturnType<SDKChat['createChannelByType']>
+    options: CreateChannelByTypeOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatChannelResponse | ServerError>
+  createChannelByType(
+    type: ChatChannelType,
+    options?: CreateChannelByTypeOptions,
+    callOptions?: CallOptions,
+  ): Promise<ChatChannelResponse['data'] | ServerError>
 
   /**
    * Creates or updates a chat channel.
    *
    * @param data - Channel data (include _id to update)
-   * @returns Promise resolving to the channel
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to the channel or ServerError
    *
    * @example
    * // Create new channel
@@ -83,44 +119,66 @@ export interface UseChatReturn {
    *   resolved: true
    * });
    */
-  upsertChannel: (
-    data: UpsertChannelOptions
-  ) => ReturnType<SDKChat['upsertChannel']>
+  upsertChannel(
+    data: UpsertChannelOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatChannelResponse | ServerError>
+  upsertChannel(
+    data: UpsertChannelOptions,
+    callOptions?: CallOptions,
+  ): Promise<ChatChannelResponse['data'] | ServerError>
 
   /**
    * Gets chat channel details.
    *
    * @param id - Channel ID
    * @param options - Options including cleanupUnreaded flag
-   * @returns Promise resolving to the channel details
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to the channel details or ServerError
    *
    * @example
    * const channel = await getChannel('staff-to-user-user-uuid');
+   *
+   * // Mark messages as read
+   * const channel = await getChannel('channel-id', { cleanupUnreaded: true });
    */
-  getChannel: (
+  getChannel(
     id: string,
-    options?: GetChannelOptions
-  ) => ReturnType<SDKChat['getChannel']>
+    options: GetChannelOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatChannelResponse | ServerError>
+  getChannel(
+    id: string,
+    options?: GetChannelOptions,
+    callOptions?: CallOptions,
+  ): Promise<ChatChannelResponse['data'] | ServerError>
 
   /**
    * Deletes a chat channel.
    *
    * @param channelId - Channel _id to delete
-   * @returns Promise resolving to success status
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to success status or ServerError
    *
    * @example
    * await deleteChannel('channel-mongo-id');
    */
-  deleteChannel: (
-    channelId: string
-  ) => ReturnType<SDKChat['deleteChannel']>
+  deleteChannel(
+    channelId: string,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatDeleteResponse | ServerError>
+  deleteChannel(
+    channelId: string,
+    callOptions?: CallOptions,
+  ): Promise<ChatDeleteResponse['data'] | ServerError>
 
   /**
    * Sends a message to a chat channel.
    *
    * @param channelId - Channel ID to send message to
    * @param options - Message options including text and attachments
-   * @returns Promise resolving to the created message
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to the created message or ServerError
    *
    * @example
    * // Send text message
@@ -137,17 +195,24 @@ export interface UseChatReturn {
    *   ]
    * });
    */
-  sendMessage: (
+  sendMessage(
     channelId: string,
-    options: SendMessageOptions
-  ) => ReturnType<SDKChat['sendMessage']>
+    options: SendMessageOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatMessageResponse | ServerError>
+  sendMessage(
+    channelId: string,
+    options: SendMessageOptions,
+    callOptions?: CallOptions,
+  ): Promise<ChatMessageResponse['data'] | ServerError>
 
   /**
    * Lists messages in a chat channel.
    *
    * @param channelId - Channel ID
    * @param options - List options including search and pagination
-   * @returns Promise resolving to message list with pagination info
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to message list with pagination info or ServerError
    *
    * @example
    * // Get recent messages
@@ -163,41 +228,64 @@ export interface UseChatReturn {
    *   search: 'hello'
    * });
    */
-  listMessages: (
+  listMessages(
     channelId: string,
-    options?: ChatMessageListOptions
-  ) => ReturnType<SDKChat['listMessages']>
+    options: ChatMessageListOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatListResponse | ServerError>
+  listMessages(
+    channelId: string,
+    options?: ChatMessageListOptions,
+    callOptions?: CallOptions,
+  ): Promise<ChatListResponse['data'] | ServerError>
 
   /**
    * Deletes a message.
    *
    * @param channelId - Channel ID
    * @param messageId - Message _id to delete
-   * @returns Promise resolving to success status
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to success status or ServerError
    *
    * @example
    * await deleteMessage('channel-id', 'message-mongo-id');
    */
-  deleteMessage: (
+  deleteMessage(
     channelId: string,
-    messageId: string
-  ) => ReturnType<SDKChat['deleteMessage']>
+    messageId: string,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ChatDeleteResponse | ServerError>
+  deleteMessage(
+    channelId: string,
+    messageId: string,
+    callOptions?: CallOptions,
+  ): Promise<ChatDeleteResponse['data'] | ServerError>
 
   /**
    * Gets unread message count for a channel (staff-to-user chats).
    *
    * @param channelId - Channel ID
    * @param options - Options including cleanupUnreaded flag
-   * @returns Promise resolving to unread counts for creator and recipient
+   * @param callOptions - Additional options for the API call including authentication type
+   * @returns Promise resolving to unread counts for creator and recipient or ServerError
    *
    * @example
    * const counts = await getUnreadCount('channel-id');
    * console.log(`Creator: ${counts.creator}, Recipient: ${counts.recipient}`);
+   *
+   * // Mark as read
+   * const counts = await getUnreadCount('channel-id', { cleanupUnreaded: true });
    */
-  getUnreadCount: (
+  getUnreadCount(
     channelId: string,
-    options?: GetUnreadCountOptions
-  ) => ReturnType<SDKChat['getUnreadCount']>
+    options: GetUnreadCountOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<UnreadCountResponse | ServerError>
+  getUnreadCount(
+    channelId: string,
+    options?: GetUnreadCountOptions,
+    callOptions?: CallOptions,
+  ): Promise<UnreadCountResponse['data'] | ServerError>
 }
 
 /**
@@ -223,6 +311,22 @@ export interface UseChatReturn {
  * await sendMessage(channel.id, {
  *   message: 'Hello! How can we help you?'
  * });
+ *
+ * // Use with API token for server-side operation
+ * const serverChannels = await listChannels(
+ *   { limit: 50 },
+ *   { authType: 'api-token' }
+ * );
+ *
+ * // Get full response object
+ * const response = await sendMessage(
+ *   'channel-id',
+ *   { message: 'Hello' },
+ *   { ignoreFormatResponse: true }
+ * );
+ * if ('success' in response && response.success) {
+ *   console.log('Message:', response.data);
+ * }
  * ```
  */
 const useChat = (): UseChatReturn => {
@@ -237,19 +341,16 @@ const useChat = (): UseChatReturn => {
 
   const listChannels = useCallback(
     async (
-      options: ChatListOptions = {}
-    ): ReturnType<SDKChat['listChannels']> => {
+      options: ChatListOptions = {},
+      callOptions: CallOptions = {},
+    ): Promise<ChatListResponse | ChatListResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.listChannels(options)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.listChannels(options, callOptions)
     },
     [sdkChat]
   )
@@ -257,38 +358,32 @@ const useChat = (): UseChatReturn => {
   const createChannelByType = useCallback(
     async (
       type: ChatChannelType,
-      options: CreateChannelByTypeOptions = {}
-    ): ReturnType<SDKChat['createChannelByType']> => {
+      options: CreateChannelByTypeOptions = {},
+      callOptions: CallOptions = {},
+    ): Promise<ChatChannelResponse | ChatChannelResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.createChannelByType(type, options)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.createChannelByType(type, options, callOptions)
     },
     [sdkChat]
   )
 
   const upsertChannel = useCallback(
     async (
-      data: UpsertChannelOptions
-    ): ReturnType<SDKChat['upsertChannel']> => {
+      data: UpsertChannelOptions,
+      callOptions: CallOptions = {},
+    ): Promise<ChatChannelResponse | ChatChannelResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.upsertChannel(data)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.upsertChannel(data, callOptions)
     },
     [sdkChat]
   )
@@ -296,36 +391,32 @@ const useChat = (): UseChatReturn => {
   const getChannel = useCallback(
     async (
       id: string,
-      options: GetChannelOptions = {}
-    ): ReturnType<SDKChat['getChannel']> => {
+      options: GetChannelOptions = {},
+      callOptions: CallOptions = {},
+    ): Promise<ChatChannelResponse | ChatChannelResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.getChannel(id, options)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.getChannel(id, options, callOptions)
     },
     [sdkChat]
   )
 
   const deleteChannel = useCallback(
-    async (channelId: string): ReturnType<SDKChat['deleteChannel']> => {
+    async (
+      channelId: string,
+      callOptions: CallOptions = {},
+    ): Promise<ChatDeleteResponse | ChatDeleteResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.deleteChannel(channelId)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.deleteChannel(channelId, callOptions)
     },
     [sdkChat]
   )
@@ -333,19 +424,16 @@ const useChat = (): UseChatReturn => {
   const sendMessage = useCallback(
     async (
       channelId: string,
-      options: SendMessageOptions
-    ): ReturnType<SDKChat['sendMessage']> => {
+      options: SendMessageOptions,
+      callOptions: CallOptions = {},
+    ): Promise<ChatMessageResponse | ChatMessageResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.sendMessage(channelId, options)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.sendMessage(channelId, options, callOptions)
     },
     [sdkChat]
   )
@@ -353,19 +441,16 @@ const useChat = (): UseChatReturn => {
   const listMessages = useCallback(
     async (
       channelId: string,
-      options: ChatMessageListOptions = {}
-    ): ReturnType<SDKChat['listMessages']> => {
+      options: ChatMessageListOptions = {},
+      callOptions: CallOptions = {},
+    ): Promise<ChatListResponse | ChatListResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.listMessages(channelId, options)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.listMessages(channelId, options, callOptions)
     },
     [sdkChat]
   )
@@ -373,19 +458,16 @@ const useChat = (): UseChatReturn => {
   const deleteMessage = useCallback(
     async (
       channelId: string,
-      messageId: string
-    ): ReturnType<SDKChat['deleteMessage']> => {
+      messageId: string,
+      callOptions: CallOptions = {},
+    ): Promise<ChatDeleteResponse | ChatDeleteResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.deleteMessage(channelId, messageId)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.deleteMessage(channelId, messageId, callOptions)
     },
     [sdkChat]
   )
@@ -393,33 +475,30 @@ const useChat = (): UseChatReturn => {
   const getUnreadCount = useCallback(
     async (
       channelId: string,
-      options: GetUnreadCountOptions = {}
-    ): ReturnType<SDKChat['getUnreadCount']> => {
+      options: GetUnreadCountOptions = {},
+      callOptions: CallOptions = {},
+    ): Promise<UnreadCountResponse | UnreadCountResponse['data'] | ServerError> => {
       if (!sdkChat) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.'
         )
       }
 
-      try {
-        return await sdkChat.getUnreadCount(channelId, options)
-      } catch (error) {
-        throw error
-      }
+      return await sdkChat.getUnreadCount(channelId, options, callOptions)
     },
     [sdkChat]
   )
 
   return {
-    listChannels,
-    createChannelByType,
-    upsertChannel,
-    getChannel,
-    deleteChannel,
-    sendMessage,
-    listMessages,
-    deleteMessage,
-    getUnreadCount,
+    listChannels: listChannels as UseChatReturn['listChannels'],
+    createChannelByType: createChannelByType as UseChatReturn['createChannelByType'],
+    upsertChannel: upsertChannel as UseChatReturn['upsertChannel'],
+    getChannel: getChannel as UseChatReturn['getChannel'],
+    deleteChannel: deleteChannel as UseChatReturn['deleteChannel'],
+    sendMessage: sendMessage as UseChatReturn['sendMessage'],
+    listMessages: listMessages as UseChatReturn['listMessages'],
+    deleteMessage: deleteMessage as UseChatReturn['deleteMessage'],
+    getUnreadCount: getUnreadCount as UseChatReturn['getUnreadCount'],
   }
 }
 

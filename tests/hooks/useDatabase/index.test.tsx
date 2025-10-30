@@ -38,7 +38,7 @@ const mockSDK = {
 
 // Mock the SDK module
 vi.mock('@emd-cloud/sdk', () => ({
-  EmdCloud: vi.fn(() => mockSDK),
+  EmdCloud: vi.fn(function() { return mockSDK }),
   AppEnvironment: {
     Client: 'client',
     Server: 'server',
