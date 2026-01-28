@@ -437,12 +437,12 @@ const MyComponent = () => {
     console.log(`${messages.count} messages:`, messages.data)
   }
 
-  // Get unread counts
+  // Get unread count
   const checkUnread = async (channelId: string) => {
-    const counts = await getUnreadCount(channelId, {
+    const { count } = await getUnreadCount(channelId, {
       cleanupUnreaded: true // Mark as read
     })
-    console.log(`Creator: ${counts.creator}, Recipient: ${counts.recipient}`)
+    console.log(`Unread messages: ${count}`)
   }
 
   // Use API token for server-side operations

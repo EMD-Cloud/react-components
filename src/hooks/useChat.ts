@@ -263,19 +263,19 @@ export interface UseChatReturn {
   ): Promise<ChatDeleteResponse['data'] | ServerError>
 
   /**
-   * Gets unread message count for a channel (staff-to-user chats).
+   * Gets unread message count for a channel.
    *
    * @param channelId - Channel ID
    * @param options - Options including cleanupUnreaded flag
    * @param callOptions - Additional options for the API call including authentication type
-   * @returns Promise resolving to unread counts for creator and recipient or ServerError
+   * @returns Promise resolving to unread count for the requesting user or ServerError
    *
    * @example
-   * const counts = await getUnreadCount('channel-id');
-   * console.log(`Creator: ${counts.creator}, Recipient: ${counts.recipient}`);
+   * const { count } = await getUnreadCount('channel-id');
+   * console.log(`Unread messages: ${count}`);
    *
    * // Mark as read
-   * const counts = await getUnreadCount('channel-id', { cleanupUnreaded: true });
+   * const { count } = await getUnreadCount('channel-id', { cleanupUnreaded: true });
    */
   getUnreadCount(
     channelId: string,

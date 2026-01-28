@@ -373,7 +373,7 @@ describe('useChat Hook Tests', () => {
 
   describe('Unread Count', () => {
     it('should get unread count successfully', async () => {
-      const mockResponse = { creator: 5, recipient: 3 }
+      const mockResponse = { count: 5 }
       mockSDK.chat.getUnreadCount.mockResolvedValue(mockResponse)
 
       const { result } = renderHook(() => useChat(), { wrapper })
@@ -391,7 +391,7 @@ describe('useChat Hook Tests', () => {
     })
 
     it('should get unread count with cleanup', async () => {
-      const mockResponse = { creator: 0, recipient: 0 }
+      const mockResponse = { count: 0 }
       mockSDK.chat.getUnreadCount.mockResolvedValue(mockResponse)
 
       const { result } = renderHook(() => useChat(), { wrapper })
@@ -499,7 +499,7 @@ describe('useChat Hook Tests', () => {
     })
 
     it('should pass callOptions to getUnreadCount', async () => {
-      const mockCountResponse = { creator: 5, recipient: 3 }
+      const mockCountResponse = { count: 5 }
       mockSDK.chat.getUnreadCount.mockResolvedValue(mockCountResponse)
 
       const { result } = renderHook(() => useChat(), { wrapper })
