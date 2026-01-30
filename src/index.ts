@@ -72,6 +72,14 @@ export type {
   SupportCountCallback,
   SupportChannelCallback,
   ConnectionStateCallback,
+  // Auth response types
+  AuthUserResponse,
+  ForgotPassDataResponse,
+  ForgotPassCheckCodeDataResponse,
+  // User interaction response types
+  SocialAttachRawResponse,
+  SimpleSuccessResponse,
+  UserListRawResponse,
   // Common types
   CallOptions,
   AuthType,

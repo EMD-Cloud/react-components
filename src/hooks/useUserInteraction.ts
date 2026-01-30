@@ -9,8 +9,14 @@ import type {
   UserData,
   SocialProvider,
   SocialAttachResponse,
+  SocialAttachRawResponse,
   UserListOptions,
   UserListResponse,
+  UserListRawResponse,
+  AuthUserResponse,
+  SimpleSuccessResponse,
+  CallOptions,
+  ServerError,
 } from '@emd-cloud/sdk'
 import type { EmdCloud } from '@emd-cloud/sdk'
 
@@ -18,67 +24,48 @@ import type { EmdCloud } from '@emd-cloud/sdk'
 type SDKUserInteraction = EmdCloud['user']
 
 export interface UseUserInteractionReturn {
-  /**
-   * Attaches a social network account to the current user.
-   *
-   * Generates an authorization URL for the specified social provider
-   * (Steam, VK, or Twitch) that the user should be redirected to.
-   *
-   * @param params - Social account attachment parameters
-   * @returns Promise resolving to authorization URL
-   */
-  attachSocialAccount: (params: {
-    provider: SocialProvider
-    redirectUrl: string
-  }) => ReturnType<SDKUserInteraction['attachSocialAccount']>
+  attachSocialAccount(
+    params: { provider: SocialProvider; redirectUrl: string },
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<SocialAttachRawResponse | ServerError>
+  attachSocialAccount(
+    params: { provider: SocialProvider; redirectUrl: string },
+    callOptions?: CallOptions,
+  ): Promise<SocialAttachResponse | ServerError>
 
-  /**
-   * Detaches a social network account from the current user.
-   *
-   * Removes the connection between the user's account and the
-   * specified social provider.
-   *
-   * @param provider - The social provider to detach
-   * @returns Promise resolving to success status
-   */
-  detachSocialAccount: (
-    provider: SocialProvider
-  ) => ReturnType<SDKUserInteraction['detachSocialAccount']>
+  detachSocialAccount(
+    provider: SocialProvider,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<SimpleSuccessResponse | ServerError>
+  detachSocialAccount(
+    provider: SocialProvider,
+    callOptions?: CallOptions,
+  ): Promise<{ success: boolean } | ServerError>
 
-  /**
-   * Updates the current user's last activity timestamp.
-   *
-   * Used to track user presence and activity for determining
-   * online status or last seen time.
-   *
-   * @returns Promise resolving to success status
-   */
-  ping: () => ReturnType<SDKUserInteraction['ping']>
+  ping(
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<SimpleSuccessResponse | ServerError>
+  ping(
+    callOptions?: CallOptions,
+  ): Promise<{ success: boolean } | ServerError>
 
-  /**
-   * Retrieves a paginated list of users in the application.
-   *
-   * Typically available only to staff members with appropriate permissions.
-   * Supports searching, filtering, sorting, and pagination.
-   *
-   * @param options - Optional filtering and pagination parameters
-   * @returns Promise resolving to user list with total count
-   */
-  getUserList: (
-    options?: UserListOptions
-  ) => ReturnType<SDKUserInteraction['getUserList']>
+  getUserList(
+    options: UserListOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<UserListRawResponse | ServerError>
+  getUserList(
+    options?: UserListOptions,
+    callOptions?: CallOptions,
+  ): Promise<UserListResponse | ServerError>
 
-  /**
-   * Retrieves detailed information about a specific user by ID.
-   *
-   * Available to staff members or users requesting their own information.
-   *
-   * @param userId - The unique identifier of the user
-   * @returns Promise resolving to user details
-   */
-  getUserDetails: (
-    userId: string
-  ) => ReturnType<SDKUserInteraction['getUserDetails']>
+  getUserDetails(
+    userId: string,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError>
+  getUserDetails(
+    userId: string,
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError>
 }
 
 /**
@@ -114,10 +101,10 @@ const useUserInteraction = (): UseUserInteractionReturn => {
   }, [appData.sdkInstance])
 
   const attachSocialAccount = useCallback(
-    async (params: {
-      provider: SocialProvider
-      redirectUrl: string
-    }): ReturnType<SDKUserInteraction['attachSocialAccount']> => {
+    async (
+      params: { provider: SocialProvider; redirectUrl: string },
+      callOptions: CallOptions = {},
+    ): Promise<SocialAttachRawResponse | SocialAttachResponse | ServerError> => {
       if (!sdkUser) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -125,7 +112,7 @@ const useUserInteraction = (): UseUserInteractionReturn => {
       }
 
       try {
-        return await sdkUser.attachSocialAccount(params)
+        return await sdkUser.attachSocialAccount(params, callOptions)
       } catch (error) {
         throw error
       }
@@ -136,7 +123,8 @@ const useUserInteraction = (): UseUserInteractionReturn => {
   const detachSocialAccount = useCallback(
     async (
       provider: SocialProvider,
-    ): ReturnType<SDKUserInteraction['detachSocialAccount']> => {
+      callOptions: CallOptions = {},
+    ): Promise<SimpleSuccessResponse | { success: boolean } | ServerError> => {
       if (!sdkUser) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -144,7 +132,7 @@ const useUserInteraction = (): UseUserInteractionReturn => {
       }
 
       try {
-        return await sdkUser.detachSocialAccount(provider)
+        return await sdkUser.detachSocialAccount(provider, callOptions)
       } catch (error) {
         throw error
       }
@@ -153,7 +141,9 @@ const useUserInteraction = (): UseUserInteractionReturn => {
   )
 
   const ping = useCallback(
-    async (): ReturnType<SDKUserInteraction['ping']> => {
+    async (
+      callOptions: CallOptions = {},
+    ): Promise<SimpleSuccessResponse | { success: boolean } | ServerError> => {
       if (!sdkUser) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -161,7 +151,7 @@ const useUserInteraction = (): UseUserInteractionReturn => {
       }
 
       try {
-        return await sdkUser.ping()
+        return await sdkUser.ping(callOptions)
       } catch (error) {
         throw error
       }
@@ -172,7 +162,8 @@ const useUserInteraction = (): UseUserInteractionReturn => {
   const getUserList = useCallback(
     async (
       options: UserListOptions = {},
-    ): ReturnType<SDKUserInteraction['getUserList']> => {
+      callOptions: CallOptions = {},
+    ): Promise<UserListRawResponse | UserListResponse | ServerError> => {
       if (!sdkUser) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -180,7 +171,7 @@ const useUserInteraction = (): UseUserInteractionReturn => {
       }
 
       try {
-        return await sdkUser.getUserList(options)
+        return await sdkUser.getUserList(options, callOptions)
       } catch (error) {
         throw error
       }
@@ -189,7 +180,10 @@ const useUserInteraction = (): UseUserInteractionReturn => {
   )
 
   const getUserDetails = useCallback(
-    async (userId: string): ReturnType<SDKUserInteraction['getUserDetails']> => {
+    async (
+      userId: string,
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError> => {
       if (!sdkUser) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -197,7 +191,7 @@ const useUserInteraction = (): UseUserInteractionReturn => {
       }
 
       try {
-        return await sdkUser.getUserDetails(userId)
+        return await sdkUser.getUserDetails(userId, callOptions)
       } catch (error) {
         throw error
       }
@@ -206,11 +200,11 @@ const useUserInteraction = (): UseUserInteractionReturn => {
   )
 
   return {
-    attachSocialAccount,
-    detachSocialAccount,
-    ping,
-    getUserList,
-    getUserDetails,
+    attachSocialAccount: attachSocialAccount as UseUserInteractionReturn['attachSocialAccount'],
+    detachSocialAccount: detachSocialAccount as UseUserInteractionReturn['detachSocialAccount'],
+    ping: ping as UseUserInteractionReturn['ping'],
+    getUserList: getUserList as UseUserInteractionReturn['getUserList'],
+    getUserDetails: getUserDetails as UseUserInteractionReturn['getUserDetails'],
   }
 }
 

@@ -8,6 +8,17 @@ import {
   UserType,
 } from 'src/components/ApplicationProvider/state-manager'
 import type { EmdCloud } from '@emd-cloud/sdk'
+import type {
+  CallOptions,
+  ServerError,
+  AuthUserResponse,
+  ForgotPassDataResponse,
+  ForgotPassCheckCodeDataResponse,
+  UserData,
+  ForgotPassData,
+  ForgotPassCheckCodeData,
+  OAuthUrlResponse,
+} from '@emd-cloud/sdk'
 
 // ** Types
 // Reuse SDK method parameter types to stay in sync with @emd-cloud/sdk
@@ -27,7 +38,90 @@ export type ForgotPasswordChangeType = Parameters<
   SDKAuth['forgotPasswordChange']
 >[0]
 
-const useAuth = () => {
+export interface UseAuthReturn {
+  authorization(
+    token: UserType['token'] | undefined,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError | null>
+  authorization(
+    token?: UserType['token'],
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError | null>
+
+  logInUser(
+    params: LogInUserType,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError>
+  logInUser(
+    params: LogInUserType,
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError>
+
+  signUpUser(
+    params: SignUpUserType,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError>
+  signUpUser(
+    params: SignUpUserType,
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError>
+
+  exchangeOAuthToken(
+    secret: Parameters<SDKAuth['exchangeOAuthToken']>[0],
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError>
+  exchangeOAuthToken(
+    secret: Parameters<SDKAuth['exchangeOAuthToken']>[0],
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError>
+
+  forgotPassword(
+    params: ForgotPasswordType,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ForgotPassDataResponse | ServerError>
+  forgotPassword(
+    params: ForgotPasswordType,
+    callOptions?: CallOptions,
+  ): Promise<ForgotPassData | ServerError>
+
+  forgotPasswordCheckCode(
+    params: ForgotPasswordCheckCodeType,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<ForgotPassCheckCodeDataResponse | ServerError>
+  forgotPasswordCheckCode(
+    params: ForgotPasswordCheckCodeType,
+    callOptions?: CallOptions,
+  ): Promise<ForgotPassCheckCodeData | ServerError>
+
+  forgotPasswordChange(
+    params: ForgotPasswordChangeType,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError>
+  forgotPasswordChange(
+    params: ForgotPasswordChangeType,
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError>
+
+  updateUser(
+    payload: Parameters<SDKAuth['updateUser']>[0],
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<AuthUserResponse | ServerError>
+  updateUser(
+    payload: Parameters<SDKAuth['updateUser']>[0],
+    callOptions?: CallOptions,
+  ): Promise<UserData | ServerError>
+
+  socialLogin: (
+    params: SocialLoginType,
+  ) => ReturnType<SDKAuth['socialLogin']>
+
+  logOutUser: () => void
+
+  userInfo: UserType | null
+  authInited: boolean
+}
+
+const useAuth = (): UseAuthReturn => {
   const appData = useContext(ApplicationContext)
   const dispatch = useContext(DispatchContext)
 
@@ -42,7 +136,10 @@ const useAuth = () => {
   }, [appData.sdkInstance])
 
   const authorization = useCallback(
-    async (token?: UserType['token']): ReturnType<SDKAuth['authorization']> => {
+    async (
+      token?: UserType['token'],
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError | null> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -53,14 +150,18 @@ const useAuth = () => {
         if (token) {
           sdkAuth.setAuthToken(token)
 
-          const userData = await sdkAuth.auth.authorization()
+          const result = await sdkAuth.auth.authorization(callOptions)
+
+          const userData = callOptions.ignoreFormatResponse
+            ? (result as AuthUserResponse)?.data
+            : result
 
           dispatch({
             type: ACTION.SET_USER,
             payload: userData,
           })
 
-          return userData
+          return result
         }
 
         return null
@@ -77,7 +178,10 @@ const useAuth = () => {
   )
 
   const logInUser = useCallback(
-    async (params: LogInUserType): ReturnType<SDKAuth['login']> => {
+    async (
+      params: LogInUserType,
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -85,7 +189,11 @@ const useAuth = () => {
       }
 
       try {
-        const userData = await sdkAuth.auth.login(params)
+        const result = await sdkAuth.auth.login(params, callOptions)
+
+        const userData = callOptions.ignoreFormatResponse
+          ? (result as AuthUserResponse).data
+          : result
 
         dispatch({
           type: ACTION.SET_USER,
@@ -97,7 +205,7 @@ const useAuth = () => {
           payload: true,
         })
 
-        return userData
+        return result
       } catch (error) {
         throw error
       } finally {
@@ -111,7 +219,10 @@ const useAuth = () => {
   )
 
   const signUpUser = useCallback(
-    async (params: SignUpUserType): ReturnType<SDKAuth['registration']> => {
+    async (
+      params: SignUpUserType,
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -119,7 +230,11 @@ const useAuth = () => {
       }
 
       try {
-        const userData = await sdkAuth.auth.registration(params)
+        const result = await sdkAuth.auth.registration(params, callOptions)
+
+        const userData = callOptions.ignoreFormatResponse
+          ? (result as AuthUserResponse).data
+          : result
 
         dispatch({
           type: ACTION.SET_USER,
@@ -131,7 +246,7 @@ const useAuth = () => {
           payload: true,
         })
 
-        return userData
+        return result
       } catch (error) {
         throw error
       }
@@ -163,7 +278,8 @@ const useAuth = () => {
   const exchangeOAuthToken = useCallback(
     async (
       secret: Parameters<SDKAuth['exchangeOAuthToken']>[0],
-    ): ReturnType<SDKAuth['exchangeOAuthToken']> => {
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -171,7 +287,11 @@ const useAuth = () => {
       }
 
       try {
-        const userData = await sdkAuth.auth.exchangeOAuthToken(secret)
+        const result = await sdkAuth.auth.exchangeOAuthToken(secret, callOptions)
+
+        const userData = callOptions.ignoreFormatResponse
+          ? (result as AuthUserResponse).data
+          : result
 
         dispatch({
           type: ACTION.SET_USER,
@@ -183,7 +303,7 @@ const useAuth = () => {
           payload: true,
         })
 
-        return userData
+        return result
       } catch (error) {
         throw error
       }
@@ -194,7 +314,8 @@ const useAuth = () => {
   const forgotPassword = useCallback(
     async (
       params: ForgotPasswordType,
-    ): ReturnType<SDKAuth['forgotPassword']> => {
+      callOptions: CallOptions = {},
+    ): Promise<ForgotPassDataResponse | ForgotPassData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -202,7 +323,7 @@ const useAuth = () => {
       }
 
       try {
-        return await sdkAuth.auth.forgotPassword(params.email)
+        return await sdkAuth.auth.forgotPassword(params.email, callOptions)
       } catch (error) {
         throw error
       }
@@ -213,7 +334,8 @@ const useAuth = () => {
   const forgotPasswordCheckCode = useCallback(
     async (
       params: ForgotPasswordCheckCodeType,
-    ): ReturnType<SDKAuth['forgotPasswordCheckCode']> => {
+      callOptions: CallOptions = {},
+    ): Promise<ForgotPassCheckCodeDataResponse | ForgotPassCheckCodeData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -221,7 +343,7 @@ const useAuth = () => {
       }
 
       try {
-        return await sdkAuth.auth.forgotPasswordCheckCode(params)
+        return await sdkAuth.auth.forgotPasswordCheckCode(params, callOptions)
       } catch (error) {
         throw error
       }
@@ -232,7 +354,8 @@ const useAuth = () => {
   const forgotPasswordChange = useCallback(
     async (
       params: ForgotPasswordChangeType,
-    ): ReturnType<SDKAuth['forgotPasswordChange']> => {
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -240,14 +363,18 @@ const useAuth = () => {
       }
 
       try {
-        const userData = await sdkAuth.auth.forgotPasswordChange(params)
+        const result = await sdkAuth.auth.forgotPasswordChange(params, callOptions)
+
+        const userData = callOptions.ignoreFormatResponse
+          ? (result as AuthUserResponse).data
+          : result
 
         dispatch({
           type: ACTION.SET_USER,
           payload: userData,
         })
 
-        return userData
+        return result
       } catch (error) {
         throw error
       }
@@ -276,7 +403,8 @@ const useAuth = () => {
   const updateUser = useCallback(
     async (
       payload: Parameters<SDKAuth['updateUser']>[0],
-    ): ReturnType<SDKAuth['updateUser']> => {
+      callOptions: CallOptions = {},
+    ): Promise<AuthUserResponse | UserData | ServerError> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -284,14 +412,18 @@ const useAuth = () => {
       }
 
       try {
-        const userData = await sdkAuth.auth.updateUser(payload)
+        const result = await sdkAuth.auth.updateUser(payload, callOptions)
+
+        const userData = callOptions.ignoreFormatResponse
+          ? (result as AuthUserResponse).data
+          : result
 
         dispatch({
           type: ACTION.SET_USER,
           payload: userData,
         })
 
-        return userData
+        return result
       } catch (error) {
         throw error
       }
@@ -308,16 +440,16 @@ const useAuth = () => {
   }, [appData.authInited])
 
   return {
-    authorization,
-    logInUser,
+    authorization: authorization as UseAuthReturn['authorization'],
+    logInUser: logInUser as UseAuthReturn['logInUser'],
     logOutUser,
-    signUpUser,
+    signUpUser: signUpUser as UseAuthReturn['signUpUser'],
     socialLogin,
-    exchangeOAuthToken,
-    forgotPassword,
-    forgotPasswordCheckCode,
-    forgotPasswordChange,
-    updateUser,
+    exchangeOAuthToken: exchangeOAuthToken as UseAuthReturn['exchangeOAuthToken'],
+    forgotPassword: forgotPassword as UseAuthReturn['forgotPassword'],
+    forgotPasswordCheckCode: forgotPasswordCheckCode as UseAuthReturn['forgotPasswordCheckCode'],
+    forgotPasswordChange: forgotPasswordChange as UseAuthReturn['forgotPasswordChange'],
+    updateUser: updateUser as UseAuthReturn['updateUser'],
     userInfo,
     authInited,
   }

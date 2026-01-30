@@ -105,7 +105,7 @@ describe('useUserInteraction Hook Tests', () => {
     expect(mockSDK.user.attachSocialAccount).toHaveBeenCalledWith({
       provider: 'steam',
       redirectUrl: 'https://myapp.com/profile',
-    })
+    }, {})
   })
 
   it('should attach VK account successfully', async () => {
@@ -125,7 +125,7 @@ describe('useUserInteraction Hook Tests', () => {
     expect(mockSDK.user.attachSocialAccount).toHaveBeenCalledWith({
       provider: 'vk',
       redirectUrl: 'https://myapp.com/callback',
-    })
+    }, {})
   })
 
   it('should attach Twitch account successfully', async () => {
@@ -145,7 +145,7 @@ describe('useUserInteraction Hook Tests', () => {
     expect(mockSDK.user.attachSocialAccount).toHaveBeenCalledWith({
       provider: 'twitch',
       redirectUrl: 'https://myapp.com/twitch-callback',
-    })
+    }, {})
   })
 
   it('should detach social account successfully', async () => {
@@ -161,7 +161,7 @@ describe('useUserInteraction Hook Tests', () => {
       expect(response).toEqual(mockResponse)
     })
 
-    expect(mockSDK.user.detachSocialAccount).toHaveBeenCalledWith('steam')
+    expect(mockSDK.user.detachSocialAccount).toHaveBeenCalledWith('steam', {})
   })
 
   it('should detach VK account successfully', async () => {
@@ -177,7 +177,7 @@ describe('useUserInteraction Hook Tests', () => {
       expect(response).toEqual(mockResponse)
     })
 
-    expect(mockSDK.user.detachSocialAccount).toHaveBeenCalledWith('vk')
+    expect(mockSDK.user.detachSocialAccount).toHaveBeenCalledWith('vk', {})
   })
 
   it('should ping user activity successfully', async () => {
@@ -191,7 +191,7 @@ describe('useUserInteraction Hook Tests', () => {
       expect(response).toEqual(mockResponse)
     })
 
-    expect(mockSDK.user.ping).toHaveBeenCalled()
+    expect(mockSDK.user.ping).toHaveBeenCalledWith({})
   })
 
   it('should get user list successfully', async () => {
@@ -218,7 +218,7 @@ describe('useUserInteraction Hook Tests', () => {
       page: 0,
       orderBy: 'createdAt',
       sort: 'DESC',
-    })
+    }, {})
   })
 
   it('should get user list with search successfully', async () => {
@@ -241,7 +241,7 @@ describe('useUserInteraction Hook Tests', () => {
     expect(mockSDK.user.getUserList).toHaveBeenCalledWith({
       search: 'john',
       limit: 10,
-    })
+    }, {})
   })
 
   it('should get user list with account status filter', async () => {
@@ -262,7 +262,7 @@ describe('useUserInteraction Hook Tests', () => {
 
     expect(mockSDK.user.getUserList).toHaveBeenCalledWith({
       accountStatus: 'approved',
-    })
+    }, {})
   })
 
   it('should get user list without options', async () => {
@@ -279,7 +279,7 @@ describe('useUserInteraction Hook Tests', () => {
       expect(response).toEqual(mockResponse)
     })
 
-    expect(mockSDK.user.getUserList).toHaveBeenCalledWith({})
+    expect(mockSDK.user.getUserList).toHaveBeenCalledWith({}, {})
   })
 
   it('should get user details successfully', async () => {
@@ -292,7 +292,7 @@ describe('useUserInteraction Hook Tests', () => {
       expect(response).toEqual(mockUser)
     })
 
-    expect(mockSDK.user.getUserDetails).toHaveBeenCalledWith('user-123')
+    expect(mockSDK.user.getUserDetails).toHaveBeenCalledWith('user-123', {})
   })
 
   it('should have all methods available when SDK is properly initialized', () => {
@@ -361,6 +361,150 @@ describe('useUserInteraction Hook Tests', () => {
     await expect(async () => {
       await result.current.getUserDetails('invalid-user-id')
     }).rejects.toThrow('User not found')
+  })
+
+  describe('CallOptions Support', () => {
+    it('should pass callOptions to attachSocialAccount', async () => {
+      const mockResponse = { url: 'https://steamcommunity.com/openid/login?...' }
+      mockSDK.user.attachSocialAccount.mockResolvedValue(mockResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        await result.current.attachSocialAccount(
+          { provider: SocialProvider.STEAM, redirectUrl: 'https://myapp.com/profile' },
+          { authType: 'api-token' }
+        )
+      })
+
+      expect(mockSDK.user.attachSocialAccount).toHaveBeenCalledWith(
+        { provider: 'steam', redirectUrl: 'https://myapp.com/profile' },
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to detachSocialAccount', async () => {
+      const mockResponse = { success: true }
+      mockSDK.user.detachSocialAccount.mockResolvedValue(mockResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        await result.current.detachSocialAccount(
+          SocialProvider.STEAM,
+          { authType: 'api-token' }
+        )
+      })
+
+      expect(mockSDK.user.detachSocialAccount).toHaveBeenCalledWith(
+        'steam',
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to ping', async () => {
+      const mockResponse = { success: true }
+      mockSDK.user.ping.mockResolvedValue(mockResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        await result.current.ping({ authType: 'api-token' })
+      })
+
+      expect(mockSDK.user.ping).toHaveBeenCalledWith({ authType: 'api-token' })
+    })
+
+    it('should pass callOptions to getUserList', async () => {
+      const mockResponse = { data: [mockUser], total: 1 }
+      mockSDK.user.getUserList.mockResolvedValue(mockResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        await result.current.getUserList(
+          { limit: 20 },
+          { authType: 'api-token' }
+        )
+      })
+
+      expect(mockSDK.user.getUserList).toHaveBeenCalledWith(
+        { limit: 20 },
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should pass callOptions to getUserDetails', async () => {
+      mockSDK.user.getUserDetails.mockResolvedValue(mockUser)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        await result.current.getUserDetails('user-123', { authType: 'api-token' })
+      })
+
+      expect(mockSDK.user.getUserDetails).toHaveBeenCalledWith(
+        'user-123',
+        { authType: 'api-token' }
+      )
+    })
+
+    it('should return full response with ignoreFormatResponse for attachSocialAccount', async () => {
+      const mockFullResponse = {
+        success: true,
+        data: { url: 'https://steamcommunity.com/openid/login?...' },
+      }
+      mockSDK.user.attachSocialAccount.mockResolvedValue(mockFullResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        const response = await result.current.attachSocialAccount(
+          { provider: SocialProvider.STEAM, redirectUrl: 'https://myapp.com/profile' },
+          { ignoreFormatResponse: true }
+        )
+        expect(response).toEqual(mockFullResponse)
+        expect('success' in response).toBe(true)
+      })
+    })
+
+    it('should return full response with ignoreFormatResponse for getUserList', async () => {
+      const mockFullResponse = {
+        success: true,
+        data: { data: [mockUser], total: 1 },
+      }
+      mockSDK.user.getUserList.mockResolvedValue(mockFullResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        const response = await result.current.getUserList(
+          { limit: 20 },
+          { ignoreFormatResponse: true }
+        )
+        expect(response).toEqual(mockFullResponse)
+        expect('success' in response).toBe(true)
+      })
+    })
+
+    it('should return full response with ignoreFormatResponse for getUserDetails', async () => {
+      const mockFullResponse = {
+        success: true,
+        data: mockUser,
+      }
+      mockSDK.user.getUserDetails.mockResolvedValue(mockFullResponse)
+
+      const { result } = renderHook(() => useUserInteraction(), { wrapper })
+
+      await act(async () => {
+        const response = await result.current.getUserDetails(
+          'user-123',
+          { ignoreFormatResponse: true }
+        )
+        expect(response).toEqual(mockFullResponse)
+        expect('success' in response).toBe(true)
+      })
+    })
   })
 
 })
