@@ -17,7 +17,6 @@ import type {
   UserData,
   ForgotPassData,
   ForgotPassCheckCodeData,
-  OAuthUrlResponse,
 } from '@emd-cloud/sdk'
 
 // ** Types
@@ -153,7 +152,7 @@ const useAuth = (): UseAuthReturn => {
           const result = await sdkAuth.auth.authorization(callOptions)
 
           const userData = callOptions.ignoreFormatResponse
-            ? (result as AuthUserResponse)?.data
+            ? (result as unknown as AuthUserResponse)?.data
             : result
 
           dispatch({
@@ -192,7 +191,7 @@ const useAuth = (): UseAuthReturn => {
         const result = await sdkAuth.auth.login(params, callOptions)
 
         const userData = callOptions.ignoreFormatResponse
-          ? (result as AuthUserResponse).data
+          ? (result as unknown as AuthUserResponse).data
           : result
 
         dispatch({
@@ -233,7 +232,7 @@ const useAuth = (): UseAuthReturn => {
         const result = await sdkAuth.auth.registration(params, callOptions)
 
         const userData = callOptions.ignoreFormatResponse
-          ? (result as AuthUserResponse).data
+          ? (result as unknown as AuthUserResponse).data
           : result
 
         dispatch({
@@ -290,7 +289,7 @@ const useAuth = (): UseAuthReturn => {
         const result = await sdkAuth.auth.exchangeOAuthToken(secret, callOptions)
 
         const userData = callOptions.ignoreFormatResponse
-          ? (result as AuthUserResponse).data
+          ? (result as unknown as AuthUserResponse).data
           : result
 
         dispatch({
@@ -366,7 +365,7 @@ const useAuth = (): UseAuthReturn => {
         const result = await sdkAuth.auth.forgotPasswordChange(params, callOptions)
 
         const userData = callOptions.ignoreFormatResponse
-          ? (result as AuthUserResponse).data
+          ? (result as unknown as AuthUserResponse).data
           : result
 
         dispatch({
@@ -415,7 +414,7 @@ const useAuth = (): UseAuthReturn => {
         const result = await sdkAuth.auth.updateUser(payload, callOptions)
 
         const userData = callOptions.ignoreFormatResponse
-          ? (result as AuthUserResponse).data
+          ? (result as unknown as AuthUserResponse).data
           : result
 
         dispatch({
@@ -432,11 +431,11 @@ const useAuth = (): UseAuthReturn => {
   )
 
   const userInfo = useMemo(() => {
-    return appData.user
+    return appData.user ?? null
   }, [appData.user])
 
   const authInited = useMemo(() => {
-    return appData.authInited
+    return appData.authInited ?? false
   }, [appData.authInited])
 
   return {
