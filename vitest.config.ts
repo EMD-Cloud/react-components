@@ -5,6 +5,11 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    typecheck: {
+      only: true,
+      include: ['tests/types/**/*.test-d.ts'],
+      tsconfig: './tsconfig.vitest-typecheck.json',
+    },
     coverage: {
       provider: 'v8',
       clean: true,

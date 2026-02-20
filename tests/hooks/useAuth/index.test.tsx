@@ -175,7 +175,7 @@ describe('useAuth Hook Tests', () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      const response = await result.current.forgotPassword({ email: 'test@example.com' })
+      const response = await result.current.forgotPassword('test@example.com')
       expect(response).toEqual(mockResponse)
     })
 
@@ -279,12 +279,14 @@ describe('useAuth Hook Tests', () => {
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
-    await expect(async () => {
-      await result.current.logInUser({
-        login: 'test@example.com',
-        password: 'password123'
-      })
-    }).rejects.toThrow('Network error')
+    await act(async () => {
+      await expect(
+        result.current.logInUser({
+          login: 'test@example.com',
+          password: 'password123'
+        }),
+      ).rejects.toThrow('Network error')
+    })
   })
 
   describe('CallOptions Support', () => {
@@ -359,7 +361,7 @@ describe('useAuth Hook Tests', () => {
 
       await act(async () => {
         await result.current.forgotPassword(
-          { email: 'test@example.com' },
+          'test@example.com',
           { authType: 'api-token' }
         )
       })
@@ -484,7 +486,7 @@ describe('useAuth Hook Tests', () => {
           { ignoreFormatResponse: true }
         )
         expect(response).toEqual(mockFullResponse)
-        expect('success' in (response as any)).toBe(true)
+        expect(response && 'success' in response).toBe(true)
       })
 
       expect(result.current.userInfo).toEqual(mockUser)
@@ -565,7 +567,7 @@ describe('useAuth Hook Tests', () => {
 
       await act(async () => {
         const response = await result.current.forgotPassword(
-          { email: 'test@example.com' },
+          'test@example.com',
           { ignoreFormatResponse: true }
         )
         expect(response).toEqual(mockFullResponse)

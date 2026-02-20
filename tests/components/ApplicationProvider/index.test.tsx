@@ -125,7 +125,7 @@ describe('ApplicationProvider Tests', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     // Mock the EmdCloud constructor to throw an error
-    mockEmdCloudConstructor.mockImplementationOnce(() => {
+    mockEmdCloudConstructor.mockImplementationOnce(function () {
       throw new Error('SDK initialization failed')
     })
 
@@ -148,7 +148,7 @@ describe('ApplicationProvider Tests', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     // Mock the constructor to throw an error simulating missing dependency
-    mockEmdCloudConstructor.mockImplementationOnce(() => {
+    mockEmdCloudConstructor.mockImplementationOnce(function () {
       throw new Error('Module not found')
     })
 

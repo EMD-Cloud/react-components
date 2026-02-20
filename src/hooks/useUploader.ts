@@ -45,7 +45,7 @@ export interface UploaderType {
   presignedUrlTTL?: number
   retryDelays?: number[]
   onBeforeUpload?: (files: File[]) => boolean
-  onBeforeRequest?: (req: any) => void
+  onBeforeRequest?: UploadOptions['onBeforeRequest']
   onUpdate?: (files: FileType[]) => void
   onSuccess?: (files: FileType[]) => void
   onFailed?: (files: FileType[]) => void
@@ -75,7 +75,7 @@ export interface UploaderType {
  * @param {number} [params.presignedUrlTTL=60] - Presigned URL lifetime in minutes
  * @param {number[]} [params.retryDelays=[0,3000,5000,10000,20000]] - Retry delay intervals in milliseconds
  * @param {(files: File[]) => boolean} [params.onBeforeUpload] - Callback before upload starts (return false to cancel)
- * @param {(req: any) => void} [params.onBeforeRequest] - Callback before each HTTP request (for request interception)
+ * @param {UploadOptions['onBeforeRequest']} [params.onBeforeRequest] - Callback before each HTTP request (for request interception)
  * @param {(files: FileType[]) => void} [params.onUpdate] - Callback when file statuses update (fires periodically during upload, stops when all files complete)
  * @param {(files: FileType[]) => void} [params.onSuccess] - Callback fired once when all files in the batch succeed
  * @param {(files: FileType[]) => void} [params.onFailed] - Callback fired once when any file in the batch fails

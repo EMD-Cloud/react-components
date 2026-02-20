@@ -22,7 +22,10 @@ import type {
   UnreadCountResponse,
   CallOptions,
   ServerError,
+  EmdCloud,
 } from '@emd-cloud/sdk'
+
+type SDKChat = EmdCloud['chat']
 
 export interface UseChatReturn {
   /**
@@ -54,14 +57,7 @@ export interface UseChatReturn {
    *   { ignoreFormatResponse: true }
    * );
    */
-  listChannels(
-    options: ChatListOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatListResponse | ServerError>
-  listChannels(
-    options?: ChatListOptions,
-    callOptions?: CallOptions,
-  ): Promise<ChatListResponse['data'] | ServerError>
+  listChannels: SDKChat['listChannels']
 
   /**
    * Creates or gets existing chat channel by type.
@@ -89,16 +85,7 @@ export interface UseChatReturn {
    *   { ignoreFormatResponse: true }
    * );
    */
-  createChannelByType(
-    type: ChatChannelType,
-    options: CreateChannelByTypeOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatChannelResponse | ServerError>
-  createChannelByType(
-    type: ChatChannelType,
-    options?: CreateChannelByTypeOptions,
-    callOptions?: CallOptions,
-  ): Promise<ChatChannelResponse['data'] | ServerError>
+  createChannelByType: SDKChat['createChannelByType']
 
   /**
    * Creates or updates a chat channel.
@@ -120,14 +107,7 @@ export interface UseChatReturn {
    *   resolved: true
    * });
    */
-  upsertChannel(
-    data: UpsertChannelOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatChannelResponse | ServerError>
-  upsertChannel(
-    data: UpsertChannelOptions,
-    callOptions?: CallOptions,
-  ): Promise<ChatChannelResponse['data'] | ServerError>
+  upsertChannel: SDKChat['upsertChannel']
 
   /**
    * Gets chat channel details.
@@ -143,16 +123,7 @@ export interface UseChatReturn {
    * // Mark messages as read
    * const channel = await getChannel('channel-id', { cleanupUnreaded: true });
    */
-  getChannel(
-    id: string,
-    options: GetChannelOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatChannelResponse | ServerError>
-  getChannel(
-    id: string,
-    options?: GetChannelOptions,
-    callOptions?: CallOptions,
-  ): Promise<ChatChannelResponse['data'] | ServerError>
+  getChannel: SDKChat['getChannel']
 
   /**
    * Deletes a chat channel.
@@ -164,14 +135,7 @@ export interface UseChatReturn {
    * @example
    * await deleteChannel('channel-mongo-id');
    */
-  deleteChannel(
-    channelId: string,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatDeleteResponse | ServerError>
-  deleteChannel(
-    channelId: string,
-    callOptions?: CallOptions,
-  ): Promise<ChatDeleteResponse['data'] | ServerError>
+  deleteChannel: SDKChat['deleteChannel']
 
   /**
    * Sends a message to a chat channel.
@@ -196,16 +160,7 @@ export interface UseChatReturn {
    *   ]
    * });
    */
-  sendMessage(
-    channelId: string,
-    options: SendMessageOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatMessageResponse | ServerError>
-  sendMessage(
-    channelId: string,
-    options: SendMessageOptions,
-    callOptions?: CallOptions,
-  ): Promise<ChatMessageResponse['data'] | ServerError>
+  sendMessage: SDKChat['sendMessage']
 
   /**
    * Lists messages in a chat channel.
@@ -229,16 +184,7 @@ export interface UseChatReturn {
    *   search: 'hello'
    * });
    */
-  listMessages(
-    channelId: string,
-    options: ChatMessageListOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatListResponse | ServerError>
-  listMessages(
-    channelId: string,
-    options?: ChatMessageListOptions,
-    callOptions?: CallOptions,
-  ): Promise<ChatListResponse['data'] | ServerError>
+  listMessages: SDKChat['listMessages']
 
   /**
    * Deletes a message.
@@ -251,16 +197,7 @@ export interface UseChatReturn {
    * @example
    * await deleteMessage('channel-id', 'message-mongo-id');
    */
-  deleteMessage(
-    channelId: string,
-    messageId: string,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ChatDeleteResponse | ServerError>
-  deleteMessage(
-    channelId: string,
-    messageId: string,
-    callOptions?: CallOptions,
-  ): Promise<ChatDeleteResponse['data'] | ServerError>
+  deleteMessage: SDKChat['deleteMessage']
 
   /**
    * Gets unread message count for a channel.
@@ -277,16 +214,7 @@ export interface UseChatReturn {
    * // Mark as read
    * const { count } = await getUnreadCount('channel-id', { cleanupUnreaded: true });
    */
-  getUnreadCount(
-    channelId: string,
-    options: GetUnreadCountOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<UnreadCountResponse | ServerError>
-  getUnreadCount(
-    channelId: string,
-    options?: GetUnreadCountOptions,
-    callOptions?: CallOptions,
-  ): Promise<UnreadCountResponse['data'] | ServerError>
+  getUnreadCount: SDKChat['getUnreadCount']
 }
 
 /**

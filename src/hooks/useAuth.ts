@@ -11,6 +11,7 @@ import type { EmdCloud } from '@emd-cloud/sdk'
 import type {
   CallOptions,
   ServerError,
+  ValidationError,
   AuthUserResponse,
   ForgotPassDataResponse,
   ForgotPassCheckCodeDataResponse,
@@ -25,11 +26,7 @@ type SDKAuth = EmdCloud['auth']
 export type LogInUserType = Parameters<SDKAuth['login']>[0]
 export type SignUpUserType = Parameters<SDKAuth['registration']>[0]
 export type SocialLoginType = Parameters<SDKAuth['socialLogin']>[0]
-export type ForgotPasswordType = Parameters<
-  SDKAuth['forgotPassword']
->[0] extends string
-  ? { email: string }
-  : Parameters<SDKAuth['forgotPassword']>[0]
+export type ForgotPasswordType = Parameters<SDKAuth['forgotPassword']>[0]
 export type ForgotPasswordCheckCodeType = Parameters<
   SDKAuth['forgotPasswordCheckCode']
 >[0]
@@ -41,83 +38,51 @@ export interface UseAuthReturn {
   authorization(
     token: UserType['token'] | undefined,
     callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError | null>
+  ): Promise<AuthUserResponse | ServerError | ValidationError | null>
   authorization(
     token?: UserType['token'],
     callOptions?: CallOptions,
-  ): Promise<UserData | ServerError | null>
+  ): Promise<UserData | ServerError | ValidationError | null>
 
-  logInUser(
-    params: LogInUserType,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError>
-  logInUser(
-    params: LogInUserType,
-    callOptions?: CallOptions,
-  ): Promise<UserData | ServerError>
+  logInUser: SDKAuth['login']
+  signUpUser: SDKAuth['registration']
+  exchangeOAuthToken: SDKAuth['exchangeOAuthToken']
+  forgotPassword: SDKAuth['forgotPassword']
+  forgotPasswordCheckCode: SDKAuth['forgotPasswordCheckCode']
+  forgotPasswordChange: SDKAuth['forgotPasswordChange']
+  updateUser: SDKAuth['updateUser']
 
-  signUpUser(
-    params: SignUpUserType,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError>
-  signUpUser(
-    params: SignUpUserType,
-    callOptions?: CallOptions,
-  ): Promise<UserData | ServerError>
-
-  exchangeOAuthToken(
-    secret: Parameters<SDKAuth['exchangeOAuthToken']>[0],
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError>
-  exchangeOAuthToken(
-    secret: Parameters<SDKAuth['exchangeOAuthToken']>[0],
-    callOptions?: CallOptions,
-  ): Promise<UserData | ServerError>
-
-  forgotPassword(
-    params: ForgotPasswordType,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ForgotPassDataResponse | ServerError>
-  forgotPassword(
-    params: ForgotPasswordType,
-    callOptions?: CallOptions,
-  ): Promise<ForgotPassData | ServerError>
-
-  forgotPasswordCheckCode(
-    params: ForgotPasswordCheckCodeType,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<ForgotPassCheckCodeDataResponse | ServerError>
-  forgotPasswordCheckCode(
-    params: ForgotPasswordCheckCodeType,
-    callOptions?: CallOptions,
-  ): Promise<ForgotPassCheckCodeData | ServerError>
-
-  forgotPasswordChange(
-    params: ForgotPasswordChangeType,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError>
-  forgotPasswordChange(
-    params: ForgotPasswordChangeType,
-    callOptions?: CallOptions,
-  ): Promise<UserData | ServerError>
-
-  updateUser(
-    payload: Parameters<SDKAuth['updateUser']>[0],
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError>
-  updateUser(
-    payload: Parameters<SDKAuth['updateUser']>[0],
-    callOptions?: CallOptions,
-  ): Promise<UserData | ServerError>
-
-  socialLogin: (
-    params: SocialLoginType,
-  ) => ReturnType<SDKAuth['socialLogin']>
+  socialLogin: SDKAuth['socialLogin']
 
   logOutUser: () => void
 
   userInfo: UserType | null
   authInited: boolean
+}
+
+const isAuthUserResponse = (
+  value: AuthUserResponse | UserData | ServerError | ValidationError,
+): value is AuthUserResponse => {
+  return typeof value === 'object' && value !== null && 'success' in value && 'data' in value
+}
+
+const getAuthUser = (
+  result: AuthUserResponse | UserData | ServerError | ValidationError | null,
+  callOptions: CallOptions,
+): UserData | null => {
+  if (!result || result instanceof Error) {
+    return null
+  }
+
+  if (callOptions.ignoreFormatResponse && isAuthUserResponse(result)) {
+    return result.data
+  }
+
+  if (isAuthUserResponse(result)) {
+    return result.data
+  }
+
+  return result
 }
 
 const useAuth = (): UseAuthReturn => {
@@ -138,7 +103,7 @@ const useAuth = (): UseAuthReturn => {
     async (
       token?: UserType['token'],
       callOptions: CallOptions = {},
-    ): Promise<AuthUserResponse | UserData | ServerError | null> => {
+    ): Promise<AuthUserResponse | UserData | ServerError | ValidationError | null> => {
       if (!sdkAuth) {
         throw new Error(
           'SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.',
@@ -151,9 +116,7 @@ const useAuth = (): UseAuthReturn => {
 
           const result = await sdkAuth.auth.authorization(callOptions)
 
-          const userData = callOptions.ignoreFormatResponse
-            ? (result as unknown as AuthUserResponse)?.data
-            : result
+          const userData = getAuthUser(result, callOptions)
 
           dispatch({
             type: ACTION.SET_USER,
@@ -190,9 +153,7 @@ const useAuth = (): UseAuthReturn => {
       try {
         const result = await sdkAuth.auth.login(params, callOptions)
 
-        const userData = callOptions.ignoreFormatResponse
-          ? (result as unknown as AuthUserResponse).data
-          : result
+        const userData = getAuthUser(result, callOptions)
 
         dispatch({
           type: ACTION.SET_USER,
@@ -231,9 +192,7 @@ const useAuth = (): UseAuthReturn => {
       try {
         const result = await sdkAuth.auth.registration(params, callOptions)
 
-        const userData = callOptions.ignoreFormatResponse
-          ? (result as unknown as AuthUserResponse).data
-          : result
+        const userData = getAuthUser(result, callOptions)
 
         dispatch({
           type: ACTION.SET_USER,
@@ -288,9 +247,7 @@ const useAuth = (): UseAuthReturn => {
       try {
         const result = await sdkAuth.auth.exchangeOAuthToken(secret, callOptions)
 
-        const userData = callOptions.ignoreFormatResponse
-          ? (result as unknown as AuthUserResponse).data
-          : result
+        const userData = getAuthUser(result, callOptions)
 
         dispatch({
           type: ACTION.SET_USER,
@@ -312,7 +269,7 @@ const useAuth = (): UseAuthReturn => {
 
   const forgotPassword = useCallback(
     async (
-      params: ForgotPasswordType,
+      email: ForgotPasswordType,
       callOptions: CallOptions = {},
     ): Promise<ForgotPassDataResponse | ForgotPassData | ServerError> => {
       if (!sdkAuth) {
@@ -322,7 +279,7 @@ const useAuth = (): UseAuthReturn => {
       }
 
       try {
-        return await sdkAuth.auth.forgotPassword(params.email, callOptions)
+        return await sdkAuth.auth.forgotPassword(email, callOptions)
       } catch (error) {
         throw error
       }
@@ -364,9 +321,7 @@ const useAuth = (): UseAuthReturn => {
       try {
         const result = await sdkAuth.auth.forgotPasswordChange(params, callOptions)
 
-        const userData = callOptions.ignoreFormatResponse
-          ? (result as unknown as AuthUserResponse).data
-          : result
+        const userData = getAuthUser(result, callOptions)
 
         dispatch({
           type: ACTION.SET_USER,
@@ -413,9 +368,7 @@ const useAuth = (): UseAuthReturn => {
       try {
         const result = await sdkAuth.auth.updateUser(payload, callOptions)
 
-        const userData = callOptions.ignoreFormatResponse
-          ? (result as unknown as AuthUserResponse).data
-          : result
+        const userData = getAuthUser(result, callOptions)
 
         dispatch({
           type: ACTION.SET_USER,
@@ -443,7 +396,7 @@ const useAuth = (): UseAuthReturn => {
     logInUser: logInUser as UseAuthReturn['logInUser'],
     logOutUser,
     signUpUser: signUpUser as UseAuthReturn['signUpUser'],
-    socialLogin,
+    socialLogin: socialLogin as UseAuthReturn['socialLogin'],
     exchangeOAuthToken: exchangeOAuthToken as UseAuthReturn['exchangeOAuthToken'],
     forgotPassword: forgotPassword as UseAuthReturn['forgotPassword'],
     forgotPasswordCheckCode: forgotPasswordCheckCode as UseAuthReturn['forgotPasswordCheckCode'],

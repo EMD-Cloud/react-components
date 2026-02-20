@@ -24,48 +24,11 @@ import type { EmdCloud } from '@emd-cloud/sdk'
 type SDKUserInteraction = EmdCloud['user']
 
 export interface UseUserInteractionReturn {
-  attachSocialAccount(
-    params: { provider: SocialProvider; redirectUrl: string },
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<SocialAttachRawResponse | ServerError>
-  attachSocialAccount(
-    params: { provider: SocialProvider; redirectUrl: string },
-    callOptions?: CallOptions,
-  ): Promise<SocialAttachResponse | ServerError>
-
-  detachSocialAccount(
-    provider: SocialProvider,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<SimpleSuccessResponse | ServerError>
-  detachSocialAccount(
-    provider: SocialProvider,
-    callOptions?: CallOptions,
-  ): Promise<{ success: boolean } | ServerError>
-
-  ping(
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<SimpleSuccessResponse | ServerError>
-  ping(
-    callOptions?: CallOptions,
-  ): Promise<{ success: boolean } | ServerError>
-
-  getUserList(
-    options: UserListOptions,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<UserListRawResponse | ServerError>
-  getUserList(
-    options?: UserListOptions,
-    callOptions?: CallOptions,
-  ): Promise<UserListResponse | ServerError>
-
-  getUserDetails(
-    userId: string,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<AuthUserResponse | ServerError>
-  getUserDetails(
-    userId: string,
-    callOptions?: CallOptions,
-  ): Promise<UserData | ServerError>
+  attachSocialAccount: SDKUserInteraction['attachSocialAccount']
+  detachSocialAccount: SDKUserInteraction['detachSocialAccount']
+  ping: SDKUserInteraction['ping']
+  getUserList: SDKUserInteraction['getUserList']
+  getUserDetails: SDKUserInteraction['getUserDetails']
 }
 
 /**

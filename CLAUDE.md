@@ -12,6 +12,7 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 - `npm install` - Install dependencies
 - `npm run build` - Build the library (cleans dist/, compiles TypeScript, and bundles with Rollup)
 - `npm test` - Run tests once
+- `npm run test:types`: Run Vitest type tests (`tests/types/**/*.test-d.ts`).
 - `npm run test:watch` - Run tests in watch mode
 - `npm run storybook` - Start Storybook development server on port 6006
 - `npm run build-storybook` - Build Storybook for production

@@ -16,14 +16,29 @@ import type {
   DatabaseBulkUpdatePayload,
   DatabaseRowResponse,
   DatabaseRowsResponse,
+  OptimisedRowsResponse,
   DatabaseCountResponse,
   DatabaseBulkResponse,
   DatabaseDeleteResponse,
   DatabaseTriggerResponse,
+  DatabaseSaveMode,
+  DatabaseWriteData,
+  DatabaseAsyncRowResponse,
+  OmitIgnored,
+  ResolveRelations,
+  ResolveRelationsOptimised,
   CallOptions,
   ServerError,
 } from '@emd-cloud/sdk'
-import type { Database } from '@emd-cloud/sdk'
+import type { Database, EmdCloud } from '@emd-cloud/sdk'
+
+type RowSchema = Record<string, unknown>
+type SDKDatabaseFactory = EmdCloud['database']
+type InferIgnoredColumns<TOptions> = TOptions extends {
+  ignoreColumns?: readonly (infer K)[]
+}
+  ? Extract<K, string>
+  : never
 
 export interface UseDatabaseReturn {
   /**
@@ -39,16 +54,78 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the rows response or ServerError
    */
-  getRows<T = Record<string, any>>(
+  getRows<
+    TSchema extends RowSchema = RowSchema,
+    const TOptions extends DatabaseListOptions & {
+      hasOptimiseResponse: true
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    } = DatabaseListOptions & {
+      hasOptimiseResponse: true
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    },
+  >(
     collectionId: string,
-    options: DatabaseListOptions,
+    options: TOptions,
     callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<DatabaseRowsResponse<T> | ServerError>
-  getRows<T = Record<string, any>>(
+  ): Promise<
+    OptimisedRowsResponse<
+      OmitIgnored<ResolveRelationsOptimised<TSchema>, InferIgnoredColumns<TOptions>>
+    >
+    | ServerError
+  >
+  getRows<
+    TSchema extends RowSchema = RowSchema,
+    const TOptions extends DatabaseListOptions & {
+      hasOptimiseResponse: true
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    } = DatabaseListOptions & {
+      hasOptimiseResponse: true
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    },
+  >(
     collectionId: string,
-    options?: DatabaseListOptions,
+    options: TOptions,
     callOptions?: CallOptions,
-  ): Promise<DatabaseRowsResponse<T>['data'] | ServerError>
+  ): Promise<
+    OptimisedRowsResponse<
+      OmitIgnored<ResolveRelationsOptimised<TSchema>, InferIgnoredColumns<TOptions>>
+    >['data']
+    | ServerError
+  >
+  getRows<
+    TSchema extends RowSchema = RowSchema,
+    const TOptions extends DatabaseListOptions & {
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    } = DatabaseListOptions & {
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    },
+  >(
+    collectionId: string,
+    options: TOptions,
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<
+    DatabaseRowsResponse<
+      OmitIgnored<ResolveRelations<TSchema>, InferIgnoredColumns<TOptions>>
+    >
+    | ServerError
+  >
+  getRows<
+    TSchema extends RowSchema = RowSchema,
+    const TOptions extends DatabaseListOptions & {
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    } = DatabaseListOptions & {
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    },
+  >(
+    collectionId: string,
+    options?: TOptions,
+    callOptions?: CallOptions,
+  ): Promise<
+    DatabaseRowsResponse<
+      OmitIgnored<ResolveRelations<TSchema>, InferIgnoredColumns<TOptions>>
+    >['data']
+    | ServerError
+  >
 
   /**
    * Gets the total count of rows matching the specified query.
@@ -78,18 +155,18 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the row response or ServerError
    */
-  getRow<T = Record<string, any>>(
+  getRow<TSchema extends RowSchema = RowSchema>(
     collectionId: string,
     rowId: string,
     options: DatabaseGetRowOptions,
     callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<DatabaseRowResponse<T> | ServerError>
-  getRow<T = Record<string, any>>(
+  ): Promise<DatabaseRowResponse<ResolveRelations<TSchema>> | ServerError>
+  getRow<TSchema extends RowSchema = RowSchema>(
     collectionId: string,
     rowId: string,
     options?: DatabaseGetRowOptions,
     callOptions?: CallOptions,
-  ): Promise<DatabaseRowResponse<T>['data'] | ServerError>
+  ): Promise<DatabaseRowResponse<ResolveRelations<TSchema>>['data'] | ServerError>
 
   /**
    * Creates a new row in the database collection.
@@ -100,18 +177,18 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the created row response or ServerError
    */
-  createRow<T = Record<string, any>>(
+  createRow<TSchema extends RowSchema = RowSchema, TRead = ResolveRelations<TSchema>>(
     collectionId: string,
-    rowData: Record<string, any>,
+    rowData: DatabaseWriteData<TSchema>,
     options: DatabaseCreateOptions,
     callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<DatabaseRowResponse<T> | ServerError>
-  createRow<T = Record<string, any>>(
+  ): Promise<DatabaseRowResponse<TRead> | ServerError>
+  createRow<TSchema extends RowSchema = RowSchema, TRead = ResolveRelations<TSchema>>(
     collectionId: string,
-    rowData: Record<string, any>,
+    rowData: DatabaseWriteData<TSchema>,
     options?: DatabaseCreateOptions,
     callOptions?: CallOptions,
-  ): Promise<DatabaseRowResponse<T>['data'] | ServerError>
+  ): Promise<DatabaseRowResponse<TRead>['data'] | ServerError>
 
   /**
    * Updates an existing row in the database collection.
@@ -123,20 +200,72 @@ export interface UseDatabaseReturn {
    * @param callOptions - Additional options for the API call including authentication type
    * @returns A promise that resolves to the updated row response or ServerError
    */
-  updateRow<T = Record<string, any>>(
+  updateRow<
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
     collectionId: string,
     rowId: string,
-    rowData: Record<string, any>,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
+    options: DatabaseUpdateOptions & { saveMode: DatabaseSaveMode.ASYNC },
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseAsyncRowResponse<TAsyncData> | ServerError>
+  updateRow<
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
+    collectionId: string,
+    rowId: string,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
+    options: DatabaseUpdateOptions & { saveMode: DatabaseSaveMode.ASYNC },
+    callOptions?: CallOptions,
+  ): Promise<DatabaseAsyncRowResponse<TAsyncData>['data'] | ServerError>
+  updateRow<
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
+    collectionId: string,
+    rowId: string,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
+    options: DatabaseUpdateOptions & { saveMode?: DatabaseSaveMode.SYNC },
+    callOptions: CallOptions & { ignoreFormatResponse: true },
+  ): Promise<DatabaseRowResponse<TRead> | ServerError>
+  updateRow<
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
+    collectionId: string,
+    rowId: string,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
+    options?: DatabaseUpdateOptions & { saveMode?: DatabaseSaveMode.SYNC },
+    callOptions?: CallOptions,
+  ): Promise<DatabaseRowResponse<TRead>['data'] | ServerError>
+  updateRow<
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
+    collectionId: string,
+    rowId: string,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
     options: DatabaseUpdateOptions,
     callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<DatabaseRowResponse<T> | ServerError>
-  updateRow<T = Record<string, any>>(
+  ): Promise<DatabaseRowResponse<TRead> | DatabaseAsyncRowResponse<TAsyncData> | ServerError>
+  updateRow<
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
     collectionId: string,
     rowId: string,
-    rowData: Record<string, any>,
-    options?: DatabaseUpdateOptions,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
+    options: DatabaseUpdateOptions,
     callOptions?: CallOptions,
-  ): Promise<DatabaseRowResponse<T>['data'] | ServerError>
+  ): Promise<DatabaseRowResponse<TRead>['data'] | DatabaseAsyncRowResponse<TAsyncData>['data'] | ServerError>
 
   /**
    * Updates multiple rows matching the specified query.
@@ -221,24 +350,24 @@ export interface UseDatabaseReturn {
 /**
  * Hook for interacting with EMD Cloud database collections.
  * Provides CRUD operations and advanced database functionality.
- * 
+ *
  * @example
  * ```tsx
- * const { getRows, createRow, updateRow, deleteRow } = useDatabase();
- * 
+ * const { getRows, createRow, updateRow, deleteRow } = useDatabase()
+ *
  * // Get rows with filtering
  * const users = await getRows('users', {
  *   query: { "$and": [{ "data.status": { "$eq": "active" } }] },
  *   limit: 20,
  *   sort: [{ column: "createdAt", sort: "desc" }]
- * });
- * 
+ * })
+ *
  * // Create a new row
  * const newUser = await createRow('users', {
  *   name: 'John Doe',
  *   email: 'john@example.com',
  *   status: 'active'
- * });
+ * })
  * ```
  */
 const useDatabase = (): UseDatabaseReturn => {
@@ -249,134 +378,127 @@ const useDatabase = (): UseDatabaseReturn => {
     return null
   }, [])
 
-  const sdkDatabase = useMemo(() => {
+  const sdkDatabase = useMemo<SDKDatabaseFactory | null>(() => {
     if (!appData.sdkInstance) {
       return null
     }
     return appData.sdkInstance.database.bind(appData.sdkInstance)
   }, [appData.sdkInstance])
 
-  const getRows = useCallback(async <T = Record<string, any>>(
-    collectionId: string,
-    options: DatabaseListOptions = {},
-    callOptions: CallOptions = {},
-  ): Promise<DatabaseRowsResponse<T> | DatabaseRowsResponse<T>['data'] | ServerError> => {
+  const getDatabaseInstance = useCallback((collectionId: string) => {
     if (!sdkDatabase) {
       throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
     }
 
-    const dbInstance = sdkDatabase(collectionId)
-    return await dbInstance.getRows<T>(options, callOptions)
+    return sdkDatabase(collectionId)
   }, [sdkDatabase])
+
+  const getRows = useCallback(async <
+    TSchema extends RowSchema = RowSchema,
+    const TOptions extends DatabaseListOptions & {
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    } = DatabaseListOptions & {
+      ignoreColumns?: readonly (keyof TSchema & string)[]
+    },
+  >(
+    collectionId: string,
+    options: TOptions = {} as TOptions,
+    callOptions: CallOptions = {},
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
+
+    return await dbInstance.getRows<TSchema, TOptions>(options, callOptions)
+  }, [getDatabaseInstance])
 
   const countRows = useCallback(async (
     collectionId: string,
     options: DatabaseCountOptions = {},
     callOptions: CallOptions = {},
-  ): Promise<DatabaseCountResponse | DatabaseCountResponse['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
-
-    const dbInstance = sdkDatabase(collectionId) as Database
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
     return await dbInstance.countRows(options, callOptions)
-  }, [sdkDatabase])
+  }, [getDatabaseInstance])
 
-  const getRow = useCallback(async <T = Record<string, any>>(
+  const getRow = useCallback(async <TSchema extends RowSchema = RowSchema>(
     collectionId: string,
     rowId: string,
     options: DatabaseGetRowOptions = {},
     callOptions: CallOptions = {},
-  ): Promise<DatabaseRowResponse<T> | DatabaseRowResponse<T>['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
+    return await dbInstance.getRow<TSchema>(rowId, options, callOptions)
+  }, [getDatabaseInstance])
 
-    const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.getRow<T>(rowId, options, callOptions)
-  }, [sdkDatabase])
-
-  const createRow = useCallback(async <T = Record<string, any>>(
+  const createRow = useCallback(async <
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+  >(
     collectionId: string,
-    rowData: Record<string, any>,
+    rowData: DatabaseWriteData<TSchema>,
     options: DatabaseCreateOptions = {},
     callOptions: CallOptions = {},
-  ): Promise<DatabaseRowResponse<T> | DatabaseRowResponse<T>['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
+    return await dbInstance.createRow<TSchema, TRead>(rowData, options, callOptions)
+  }, [getDatabaseInstance])
 
-    const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.createRow<T>(rowData, options, callOptions)
-  }, [sdkDatabase])
-
-  const updateRow = useCallback(async <T = Record<string, any>>(
+  const updateRow = useCallback(async <
+    TSchema extends RowSchema = RowSchema,
+    TRead = ResolveRelations<TSchema>,
+    TAsyncData = Partial<DatabaseWriteData<TSchema>>,
+  >(
     collectionId: string,
     rowId: string,
-    rowData: Record<string, any>,
+    rowData: Partial<DatabaseWriteData<TSchema>>,
     options: DatabaseUpdateOptions = {},
     callOptions: CallOptions = {},
-  ): Promise<DatabaseRowResponse<T> | DatabaseRowResponse<T>['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
 
-    const dbInstance = sdkDatabase(collectionId) as Database
-    return await dbInstance.updateRow<T>(rowId, rowData, options, callOptions)
-  }, [sdkDatabase])
+    return await dbInstance.updateRow<TSchema, TRead, TAsyncData>(
+      rowId,
+      rowData,
+      options,
+      callOptions,
+    )
+  }, [getDatabaseInstance])
 
   const bulkUpdate = useCallback(async (
     collectionId: string,
     payload: DatabaseBulkUpdatePayload,
     callOptions: CallOptions = {},
-  ): Promise<DatabaseBulkResponse | DatabaseBulkResponse['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
-
-    const dbInstance = sdkDatabase(collectionId) as Database
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
     return await dbInstance.bulkUpdate(payload, callOptions)
-  }, [sdkDatabase])
+  }, [getDatabaseInstance])
 
   const deleteRow = useCallback(async (
     collectionId: string,
     rowId: string,
     callOptions: CallOptions = {},
-  ): Promise<DatabaseDeleteResponse | DatabaseDeleteResponse['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
-
-    const dbInstance = sdkDatabase(collectionId) as Database
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
     return await dbInstance.deleteRow(rowId, callOptions)
-  }, [sdkDatabase])
+  }, [getDatabaseInstance])
 
   const deleteRows = useCallback(async (
     collectionId: string,
     rowIds: string[],
     callOptions: CallOptions = {},
-  ): Promise<DatabaseDeleteResponse | DatabaseDeleteResponse['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
-
-    const dbInstance = sdkDatabase(collectionId) as Database
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
     return await dbInstance.deleteRows(rowIds, callOptions)
-  }, [sdkDatabase])
+  }, [getDatabaseInstance])
 
   const triggerButton = useCallback(async (
     collectionId: string,
     rowId: string,
     columnId: string,
     callOptions: CallOptions = {},
-  ): Promise<DatabaseTriggerResponse | DatabaseTriggerResponse['data'] | ServerError> => {
-    if (!sdkDatabase) {
-      throw new Error('SDK not initialized. Make sure @emd-cloud/sdk is installed as a peer dependency.')
-    }
-
-    const dbInstance = sdkDatabase(collectionId)
+  ) => {
+    const dbInstance = getDatabaseInstance(collectionId)
     return await dbInstance.triggerButton(rowId, columnId, callOptions)
-  }, [sdkDatabase])
+  }, [getDatabaseInstance])
 
   return {
     database,

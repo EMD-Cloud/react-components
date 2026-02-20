@@ -37,8 +37,8 @@ The EMD Cloud React components provide a set of React components for interacting
     # Install the React components
     npm install @emd-cloud/react-components
     
-    # Install the required peer dependencies (v1.11.0+ required for chat features)
-    npm install @emd-cloud/sdk
+    # Install the required peer dependencies (v1.14.0+ recommended)
+    npm install @emd-cloud/sdk@^1.14.0
     ```
 
     **For TypeScript projects, types are included automatically. No additional @types packages needed.**
@@ -67,6 +67,8 @@ That's it! The EMD Cloud React components are now ready to use.
 
 This library provides full TypeScript support with exported types from the EMD Cloud SDK. You can import and use these types in your TypeScript applications:
 
+**SDK Compatibility:** `@emd-cloud/react-components@1.15.x` expects `@emd-cloud/sdk@^1.14.0` as a peer dependency.
+
 ```tsx
 import { 
   UserData,
@@ -94,6 +96,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onStatusChange }) => {
     </div>
   );
 };
+```
+
+For database-heavy apps, you can use SDK relation-aware generics for safer payload and response typing:
+
+```tsx
+import { DatabaseWriteData, ResolveRelations } from '@emd-cloud/react-components'
+import { useDatabase } from '@emd-cloud/react-components'
+
+type UserSchema = {
+  email: string
+  role: 'admin' | 'member'
+}
+
+type UserWrite = DatabaseWriteData<UserSchema>
+type UserRead = ResolveRelations<UserSchema>
+
+const { createRow, getRows } = useDatabase()
+
+await createRow<UserSchema, UserRead>('users', {
+  email: 'user@example.com',
+  role: 'member',
+} satisfies UserWrite)
+
+const users = await getRows<UserSchema>('users')
 ```
 
 **Available Types:**
@@ -368,7 +394,7 @@ const PasswordRecoveryComponent = () => {
 
   const handleForgotPassword = async (email) => {
     try {
-      const response = await forgotPassword({ email });
+      const response = await forgotPassword(email);
       console.log('Password reset requested:', response.requestId);
       // Save requestId for next steps
     } catch (error) {

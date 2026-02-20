@@ -59,16 +59,7 @@ export interface UseWebhookReturn {
    * );
    * ```
    */
-  callWebhook(
-    id: string,
-    requestOptions: RequestInit,
-    callOptions: CallOptions & { ignoreFormatResponse: true },
-  ): Promise<WebhookResponse | ServerError>
-  callWebhook(
-    id: string,
-    requestOptions: RequestInit,
-    callOptions?: CallOptions,
-  ): Promise<WebhookResponse['data'] | ServerError>
+  callWebhook: SDKWebhook['call']
 }
 
 /**

@@ -20,10 +20,31 @@ export enum ACTION {
   AUTH_INITED = 4,
 }
 
-export interface ApplicationActionType {
-  type: ACTION
-  payload: any
+type SetUserAction = {
+  type: ACTION.SET_USER
+  payload: UserType | null
 }
+
+type SetAppAction = {
+  type: ACTION.SET_APP
+  payload: string
+}
+
+type SetSdkInstanceAction = {
+  type: ACTION.SET_SDK_INSTANCE
+  payload: EmdCloud | null
+}
+
+type SetAuthInitedAction = {
+  type: ACTION.AUTH_INITED
+  payload: boolean
+}
+
+export type ApplicationActionType =
+  | SetUserAction
+  | SetAppAction
+  | SetSdkInstanceAction
+  | SetAuthInitedAction
 
 const reducer = (
   state: ApplicationDataType,
@@ -31,6 +52,10 @@ const reducer = (
 ) => {
   if (type === ACTION.SET_USER) {
     return { ...state, user: payload }
+  }
+
+  if (type === ACTION.SET_APP) {
+    return { ...state, app: payload }
   }
 
   if (type === ACTION.SET_SDK_INSTANCE) {
