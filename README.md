@@ -67,7 +67,7 @@ That's it! The EMD Cloud React components are now ready to use.
 
 This library provides full TypeScript support with exported types from the EMD Cloud SDK. You can import and use these types in your TypeScript applications:
 
-**SDK Compatibility:** `@emd-cloud/react-components@1.15.x` expects `@emd-cloud/sdk@^1.14.0` as a peer dependency.
+**SDK Compatibility:** `@emd-cloud/react-components@1.16.x` expects `@emd-cloud/sdk@^1.14.0` as a peer dependency.
 
 ```tsx
 import { 
