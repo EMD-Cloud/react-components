@@ -6,6 +6,7 @@ import config from '../../config'
 import { ApplicationProvider } from '../../../src/components'
 import { useUploader } from '../../../src/hooks'
 import { FileType } from '../../../src'
+import { AccessPolicyType } from '@emd-cloud/sdk'
 
 const mockUploadFile = vi.fn()
 const mockUploader = {
@@ -42,6 +43,11 @@ vi.mock('@emd-cloud/sdk', () => ({
   AuthType: {
     AuthToken: 'auth-token',
     ApiToken: 'api-token',
+  },
+  AccessPolicyType: {
+    Public: 'public',
+    OnlyAuthUser: 'onlyAuthUser',
+    Private: 'private',
   },
 }))
 
@@ -441,5 +447,73 @@ describe('Test useUploader', () => {
 
     expect(onSuccess).toHaveBeenCalledTimes(2)
     expect(onFailed).not.toHaveBeenCalled()
+  })
+
+  it('passes accessPolicy to SDK when provided (no readPermission)', async () => {
+    const accessPolicy = { type: AccessPolicyType.Private, allowStaff: true }
+
+    const { result } = renderHook(
+      () =>
+        useUploader({
+          accessPolicy,
+          onUpdate: vi.fn(),
+        }),
+      { wrapper },
+    )
+
+    act(() => {
+      result.current.uploadFiles(testFiles)
+    })
+
+    await flushUploadCycle()
+
+    const options = mockUploadFile.mock.calls[0][1]
+    expect(options.accessPolicy).toEqual(accessPolicy)
+    expect(options.readPermission).toBeUndefined()
+  })
+
+  it('uses readPermission as fallback when accessPolicy is absent', async () => {
+    const { result } = renderHook(
+      () =>
+        useUploader({
+          readPermission: 'public' as any,
+          onUpdate: vi.fn(),
+        }),
+      { wrapper },
+    )
+
+    act(() => {
+      result.current.uploadFiles(testFiles)
+    })
+
+    await flushUploadCycle()
+
+    const options = mockUploadFile.mock.calls[0][1]
+    expect(options.readPermission).toBe('public')
+    expect(options.accessPolicy).toBeUndefined()
+  })
+
+  it('accessPolicy takes precedence when both are provided', async () => {
+    const accessPolicy = { type: AccessPolicyType.OnlyAuthUser }
+
+    const { result } = renderHook(
+      () =>
+        useUploader({
+          readPermission: 'public' as any,
+          accessPolicy,
+          onUpdate: vi.fn(),
+        }),
+      { wrapper },
+    )
+
+    act(() => {
+      result.current.uploadFiles(testFiles)
+    })
+
+    await flushUploadCycle()
+
+    const options = mockUploadFile.mock.calls[0][1]
+    expect(options.accessPolicy).toEqual(accessPolicy)
+    expect(options.readPermission).toBeUndefined()
   })
 })

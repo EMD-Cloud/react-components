@@ -30,7 +30,7 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 ### Project Structure
 - `src/` - Source code
   - `components/` - React components (ApplicationProvider)
-  - `hooks/` - Custom React hooks (useAuth, useUploader, useDropzone, useDatabase, useWebhook, useUserInteraction, useChat, useChatWebSocket)
+  - `hooks/` - Custom React hooks (useAuth, useUploader, useDropzone, useDatabase, useWebhook, useUserInteraction, useChat, useChatWebSocket, useFileUtils)
   - `tools/` - Utility modules (uploader.ts)
   - `stories/` - Storybook stories
 - `tests/` - Test files organized by feature
@@ -45,7 +45,7 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 - **Vite**: Used for testing and Storybook
 
 ### Key Dependencies
-- `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.11.0+ for chat support)
+- `@emd-cloud/sdk` - Peer dependency providing core EMD Cloud functionality (v1.15.0+ for access policy and file utils support)
 - `tus-js-client` - Peer dependency for resumable file upload protocol
 - `uuid` - Peer dependency for generating unique identifiers
 - `react` & `react-dom` - Peer dependencies (v16.8+ through v19)
@@ -53,9 +53,9 @@ This is a React component library (`@emd-cloud/react-components`) that provides 
 
 ### Main Exports
 The library exports:
-- **Hooks**: `useAuth` (comprehensive auth with SDK integration), `useUploader`, `useDropzone`, `useDatabase` (database CRUD operations), `useWebhook` (webhook integration), `useUserInteraction` (social accounts, user management, activity tracking), `useChat` (chat REST API operations), `useChatWebSocket` (real-time chat messaging)
+- **Hooks**: `useAuth` (comprehensive auth with SDK integration), `useUploader`, `useDropzone`, `useDatabase` (database CRUD operations), `useWebhook` (webhook integration), `useUserInteraction` (social accounts, user management, activity tracking), `useChat` (chat REST API operations), `useChatWebSocket` (real-time chat messaging), `useFileUtils` (file URL helpers, access tokens, link utilities)
 - **Components**: `ApplicationProvider` (manages SDK instance and application state)
-- **Types**: All database, webhook, user interaction, and chat types from @emd-cloud/sdk
+- **Types**: All database, webhook, user interaction, chat, and uploader types from @emd-cloud/sdk (including `AccessPolicy`, `AccessPolicyType`, `ContentDisposition`)
 
 ### SDK Integration Architecture
 - **ApplicationProvider** automatically initializes and manages the EMD Cloud SDK instance
@@ -81,12 +81,19 @@ The library exports:
 - **Batch Completion Callbacks**: `onSuccess` fires once when all files succeed, `onFailed` fires once when any file fails
 - **Callback Management**: `onUpdate` fires periodically during upload and stops when batch completes
 - **State Management**: `resetUploader()` method to clear internal state and file references, preventing memory leaks
-- **Permission Control**: Flexible read permissions (public, authenticated users, staff, specific users)
+- **Permission Control**: Flexible read permissions (public, authenticated users, staff, specific users) — supports both v1 `readPermission` (deprecated) and v2 `accessPolicy` (preferred)
 - **Chunked Upload**: Large file support with configurable chunk sizes
 - **Automatic Retry**: Configurable retry delays for failed upload chunks
 - **Upload Control**: Ability to stop/abort individual file uploads
 - **Authentication**: Automatic authentication via SDK token management
 - **Type Safety**: Full TypeScript support with SDK types
+
+### File Utilities Available
+- **File URL Construction**: Build file access and metadata URLs from integration ID and file ID
+- **EMD Link Detection**: Check whether a URL points to an EMD Cloud uploaded file
+- **Link Formatting**: Format file URLs with content disposition (inline/attachment) and access tokens
+- **File Access Tokens**: Create short-lived tokens for accessing protected files
+- **Type Safety**: Full TypeScript support with SDK types (`AccessPolicy`, `ContentDisposition`)
 
 ### Database Operations Available
 - **CRUD Operations**: Create, read, update, delete database records
@@ -135,7 +142,8 @@ The library exports:
 - Database operations: 14 test cases covering all CRUD operations
 - Webhook operations: 13 test cases covering all HTTP methods
 - Authentication: 11 test cases covering all auth methods
-- File uploader: 10 test cases covering upload flow, callbacks, batch completion, and state reset
+- File uploader: 13 test cases covering upload flow, callbacks, batch completion, state reset, and accessPolicy
+- File utilities: 6 test cases covering URL construction, link detection, formatting, and access tokens
 - Mock SDK integration prevents external API dependencies
 - Error handling and edge case coverage
 
@@ -251,6 +259,35 @@ const MyComponent = () => {
       </div>
     </div>
   )
+}
+```
+
+### useFileUtils Hook
+```tsx
+import { useFileUtils, ContentDisposition } from '@emd-cloud/react-components'
+
+const MyComponent = () => {
+  const { getFileUrl, getMetaUrl, isEMDLink, formatFileLink, createFileAccessToken } = useFileUtils()
+
+  // Build a file URL from integration and file ID
+  const fileUrl = getFileUrl('default', 'abc123')
+
+  // Build a metadata URL
+  const metaUrl = getMetaUrl('default', 'abc123')
+
+  // Check if a URL is an EMD Cloud link
+  const isEmd = isEMDLink('https://api.emd.one/api/myapp/uploader/chunk/default/file/abc123')
+
+  // Format a file link with content disposition and access token
+  const downloadUrl = formatFileLink(fileUrl, ContentDisposition.Attachment, 'my-token')
+
+  // Create a short-lived access token for protected files
+  const getProtectedUrl = async () => {
+    const token = await createFileAccessToken(30) // 30 minutes TTL
+    return formatFileLink(fileUrl, ContentDisposition.Inline, String(token))
+  }
+
+  return <div>File utilities component</div>
 }
 ```
 

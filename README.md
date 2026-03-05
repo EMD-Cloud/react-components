@@ -18,6 +18,7 @@
     -   [Uploader Hooks](#uploader-hooks)
         -   [Hook: useUploader](#hook--useuploader)
         -   [Hook: useDropzone](#hook--usedropzone)
+        -   [Hook: useFileUtils](#hook--usefileutils)
 -   [Conclusion](#conclusion)
 
 ## Overview
@@ -37,8 +38,8 @@ The EMD Cloud React components provide a set of React components for interacting
     # Install the React components
     npm install @emd-cloud/react-components
     
-    # Install the required peer dependencies (v1.14.0+ recommended)
-    npm install @emd-cloud/sdk@^1.14.0
+    # Install the required peer dependencies (v1.15.0+ recommended)
+    npm install @emd-cloud/sdk@^1.15.0
     ```
 
     **For TypeScript projects, types are included automatically. No additional @types packages needed.**
@@ -169,6 +170,18 @@ const users = await getRows<UserSchema>('users')
 - `WebSocketEvent` - WebSocket event types enum
 - `ChatWebSocketOptions` - WebSocket configuration options
 - `ChatWebSocketCallbacks` - Event handler callbacks for real-time events
+
+**Uploader Types:**
+- `AccessPolicy` - v2 access policy object (preferred over `ReadPermission`)
+- `AccessPolicyType` - Access policy base type enum (`Public`, `OnlyAuthUser`, `Private`)
+- `ContentDisposition` - Content disposition enum for file downloads (`Inline`, `Attachment`)
+- `ReadPermission` - v1 read permission enum (deprecated, use `AccessPolicy` instead)
+- `UploadOptions` - Configuration options for file upload
+- `UploadProgress` - Upload progress information (bytes uploaded, total, percentage)
+- `UploadFile` - File upload state and control interface
+- `UploadCallbacks` - Upload event callback functions
+- `UploadMetadata` - Metadata for uploaded file
+- `StartUploadResponse` - Response from starting an upload
 
 **Common Types:**
 - `CallOptions` - API call configuration options
@@ -2132,12 +2145,16 @@ This hook provides file upload functionality to EMD Cloud storage using the SDK'
 -   `integration` (string, optional): S3 integration identifier. Default: `'default'`
 -   `chunkSize` (number, optional): Size of each upload chunk in bytes. Default: `5242880` (5MB)
 -   `headers` (object, optional): Additional HTTP headers to include in upload requests
--   `readPermission` (ReadPermission, optional): File access permission level. Options:
+-   `accessPolicy` (AccessPolicy, optional): **Preferred v2 access policy**. When provided, takes precedence over `readPermission`. Options:
+    -   `{ type: AccessPolicyType.Public }` - File accessible to everyone
+    -   `{ type: AccessPolicyType.OnlyAuthUser }` - File accessible to all authenticated users
+    -   `{ type: AccessPolicyType.Private, allowStaff?, allowPersonal?, allowPermittedUsers? }` - Private with granular grants
+-   `readPermission` (ReadPermission, optional, **deprecated**): Legacy v1 file access permission level. Use `accessPolicy` instead. Options:
     -   `ReadPermission.Public` - File accessible to everyone
     -   `ReadPermission.OnlyAuthUser` - File accessible to all authenticated users
     -   `ReadPermission.OnlyAppStaff` - File accessible to uploader and app staff (default)
     -   `ReadPermission.OnlyPermittedUsers` - File accessible only to users in `permittedUsers` array
--   `permittedUsers` (string[], optional): Array of user IDs who can access the file (required when `readPermission` is `OnlyPermittedUsers`)
+-   `permittedUsers` (string[], optional): Array of user IDs who can access the file (required when using permitted user access)
 -   `presignedUrlTTL` (number, optional): Lifetime of generated presigned URLs in minutes. Default: `60`
 -   `retryDelays` (number[], optional): Array of delay intervals in milliseconds for retry attempts. Default: `[0, 3000, 5000, 10000, 20000]`
 -   `onBeforeUpload` (function, optional): Callback invoked before upload starts. Return `false` to cancel upload. Default: `() => true`
@@ -2445,6 +2462,54 @@ const MyUploaderComponent = () => {
 ```
 
 In this example, the  `useDropzone`  hook is used to create a dropzone, and the uploaded files are passed to  `uploadFiles`  from the  `useUploader`  hook. The user can drag files into the specified area or select files using the button.
+
+---
+
+#### Hook: `useFileUtils`
+
+**Description:**
+
+This hook provides utility methods for working with EMD Cloud file URLs and access tokens. It wraps the SDK uploader utility methods to provide file URL construction, EMD link detection, link formatting with content disposition, and short-lived file access token creation.
+
+**Methods:**
+
+-   `getFileUrl(integration: string, fileId: string)` - Constructs the full URL to access an uploaded file
+-   `getMetaUrl(integration: string, fileId: string)` - Constructs the full URL to access file metadata
+-   `isEMDLink(url: string)` - Checks whether a URL points to an EMD Cloud uploaded file
+-   `formatFileLink(url: string, contentDisposition?: ContentDisposition, token?: string)` - Formats a file URL with optional content disposition and access token query parameters
+-   `createFileAccessToken(ttlMinutes?: number, callOptions?: CallOptions)` - Creates a short-lived access token for accessing protected files
+
+**Example:**
+
+```tsx
+import { useFileUtils, ContentDisposition } from '@emd-cloud/react-components';
+
+const FileViewer = () => {
+  const { getFileUrl, isEMDLink, formatFileLink, createFileAccessToken } = useFileUtils();
+
+  // Build a file URL from integration and file ID
+  const fileUrl = getFileUrl('default', 'abc123');
+
+  // Check if a URL is an EMD Cloud link
+  if (isEMDLink(fileUrl)) {
+    console.log('This is an EMD Cloud file');
+  }
+
+  // Create a download link with access token
+  const getDownloadLink = async () => {
+    const token = await createFileAccessToken(30); // 30 minutes TTL
+    return formatFileLink(fileUrl, ContentDisposition.Attachment, String(token));
+  };
+
+  // Create an inline viewing link
+  const getViewLink = async () => {
+    const token = await createFileAccessToken(10);
+    return formatFileLink(fileUrl, ContentDisposition.Inline, String(token));
+  };
+
+  return <div>File viewer component</div>;
+};
+```
 
 ## Advanced Usage
 

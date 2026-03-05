@@ -10,6 +10,7 @@ import {
 
 // ** External Imports
 import type {
+  AccessPolicy,
   ReadPermission,
   UploadOptions,
   UploadProgress,
@@ -40,7 +41,10 @@ export interface UploaderType {
   chunkSize?: number
   integration?: string
   headers?: Record<string, string | number | boolean>
+  /** @deprecated Use {@link UploaderType.accessPolicy} instead for v2 access control */
   readPermission?: ReadPermission
+  /** v2 access policy. When provided, takes precedence over readPermission. */
+  accessPolicy?: AccessPolicy
   permittedUsers?: string[]
   presignedUrlTTL?: number
   retryDelays?: number[]
@@ -184,6 +188,7 @@ const useUploader = ({
   integration,
   headers,
   readPermission = 'onlyAppStaff' as ReadPermission,
+  accessPolicy,
   permittedUsers,
   presignedUrlTTL = 60,
   retryDelays = [0, 3000, 5000, 10000, 20000],
@@ -297,7 +302,7 @@ const useUploader = ({
         integration: integrationId,
         chunkSize,
         retryDelays,
-        readPermission,
+        ...(accessPolicy ? { accessPolicy } : { readPermission }),
         permittedUsers,
         presignedUrlTTL,
         headers,
@@ -386,6 +391,7 @@ const useUploader = ({
       integrationId,
       chunkSize,
       retryDelays,
+      accessPolicy,
       readPermission,
       permittedUsers,
       presignedUrlTTL,

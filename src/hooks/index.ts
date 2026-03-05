@@ -6,6 +6,7 @@ import useWebhook from './useWebhook'
 import useUserInteraction from './useUserInteraction'
 import useChat from './useChat'
 import useChatWebSocket from './useChatWebSocket'
+import useFileUtils from './useFileUtils'
 
 export {
   useUploader,
@@ -15,18 +16,21 @@ export {
   useWebhook,
   useUserInteraction,
   useChat,
-  useChatWebSocket
+  useChatWebSocket,
+  useFileUtils
 }
 export type { ReadPermissionsType, FileType }
 
 // Re-export SDK uploader types for convenience
 export type {
+  AccessPolicy,
   ReadPermission,
   UploadStatus,
   UploadOptions,
   UploadProgress,
   UploadFile,
   UploadCallbacks,
+  UploadMetadata,
 } from '@emd-cloud/sdk'
 
 // Re-export SDK chat types for convenience

@@ -1,6 +1,9 @@
 export * from './components'
 export * from './hooks'
 
+// Re-export SDK enums as values (needed at runtime)
+export { AccessPolicyType, ContentDisposition } from '@emd-cloud/sdk'
+
 // Re-export useful SDK types for consumers
 export type {
   UserData,
@@ -41,12 +44,15 @@ export type {
   Relation,
   RelationMany,
   // Uploader types
+  AccessPolicy,
   ReadPermission,
   UploadStatus,
   UploadOptions,
   UploadProgress,
   UploadFile,
   UploadCallbacks,
+  UploadMetadata,
+  StartUploadResponse,
   // Chat types
   ChatChannelType,
   ChatReadPermission,

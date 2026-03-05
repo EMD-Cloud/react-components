@@ -46,7 +46,7 @@
     "url": "https://github.com/EMD-Cloud/react-components/issues"
   },
   "peerDependencies": {
-    "@emd-cloud/sdk": "^1.14.0",
+    "@emd-cloud/sdk": "^1.15.0",
     "react": "^16.8.0 || ^17 || ^18 || ^19",
     "react-dom": "^16.8.0 || ^17 || ^18 || ^19",
     "tus-js-client": "^4.3.1",
@@ -76,6 +76,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@chromatic-com/storybook": "^4.1.1",
+    "@emd-cloud/sdk": "^1.15.0",
     "@eslint/js": "^9.12.0",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-node-resolve": "^16.0.1",
